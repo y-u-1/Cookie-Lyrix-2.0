@@ -11,7 +11,6 @@ const { handleOpenModal: redeemOpenModal, handleSubmit: redeemSubmit } = require
 const { permissionKeyFor, hasPermission } = require('../lib/permissions');
 const { tGuild } = require('../lib/i18n');
 
-// 安全な応答関数（エラーで二重応答になるのを防ぐ）
 async function safeReply(interaction, content, ephemeral = true) {
   try {
     if (interaction.deferred) {
@@ -24,8 +23,7 @@ async function safeReply(interaction, content, ephemeral = true) {
       await interaction.reply({ content, ephemeral });
     }
   } catch (e) {
-    // 応答時にエラーが出ても無視してクラッシュを防ぐ
-    logger.error('SafeReply Error:', e);
+    console.error('SafeReply Error:', e);
   }
 }
 
@@ -34,10 +32,13 @@ module.exports = {
   async execute(interaction, client) {
     // ボタンとモーダルの処理
     if (interaction.isButton() || interaction.isModalSubmit()) {
+      console.log(`[DEBUG] Interaction received: ${interaction.customId}`);
+      
       // 3秒以内に応答できない可能性があるため、即座に遅延応答（処理中）を返す
       if (!interaction.deferred && !interaction.replied) {
         try {
-          await interaction.deferReply({ ephemeral: true }).catch(() => {});
+          await interaction.deferReply({ ephemeral: true }).catch(e => console.error('DeferReply Error:', e));
+          console.log(`[DEBUG] Deferred reply sent for: ${interaction.customId}`);
         } catch (e) {}
       }
 
@@ -52,8 +53,10 @@ module.exports = {
         else if (interaction.customId === 'redeem_open_modal') await redeemOpenModal(interaction);
         else if (interaction.customId === 'redeem_submit') await redeemSubmit(interaction);
         else if (interaction.customId === 'role_panel_modal') await roleRoute(interaction);
+        
+        console.log(`[DEBUG] Interaction processed successfully: ${interaction.customId}`);
       } catch (err) {
-        logger.error('Interaction error:', err);
+        console.error(`[ERROR] Interaction error (${interaction.customId}):`, err);
         await safeReply(interaction, '処理中にエラーが発生しました。');
       }
       return;
@@ -75,7 +78,7 @@ module.exports = {
 
       await command.execute(interaction);
     } catch (error) {
-      logger.error(`Command execution error (${interaction.commandName}):`, error);
+      console.error(`[ERROR] Command execution error (${interaction.commandName}):`, error);
       await safeReply(interaction, 'コマンドの実行中にエラーが発生しました。');
     }
   },
