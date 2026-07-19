@@ -11,6 +11,8 @@ module.exports = {
     .addStringOption((opt) => opt.setName('description').setDescription('説明 / Description').setRequired(false))
     .addStringOption((opt) => opt.setName('color').setDescription('Hexカラー / Hex color').setRequired(false)),
   async execute(interaction) {
+    await interaction.deferReply({ ephemeral: true });
+
     const title = interaction.options.getString('title');
     const desc = interaction.options.getString('description') ?? '';
     const colorInput = interaction.options.getString('color') ?? '#5865F2';
@@ -18,7 +20,7 @@ module.exports = {
     const hex = colorInput.replace('#', '');
     if (!/^[0-9a-fA-F]{6}$/.test(hex)) {
       const errMsg = await tGuild(interaction.guild.id, 'message.invalid_color');
-      return interaction.reply({ content: errMsg, ephemeral: true });
+      return interaction.editReply({ content: errMsg });
     }
 
     const embed = new EmbedBuilder()
@@ -30,6 +32,6 @@ module.exports = {
 
     const msg = await tGuild(interaction.guild.id, 'message.sent');
     const successEmbed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
-    await interaction.reply({ embeds: [successEmbed], ephemeral: true });
+    await interaction.editReply({ embeds: [successEmbed] });
   },
 };

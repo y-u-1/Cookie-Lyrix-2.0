@@ -9,6 +9,7 @@ const { startKeepAlive } = require('./lib/keepAlive');
 const { startGiveawayScheduler } = require('./commands/giveaway/giveawayScheduler');
 const { startLevelScheduler } = require('./commands/level/levelScheduler');
 const { startEarthquakeScheduler } = require('./commands/moderation/earthquakeScheduler');
+const { startTicketScheduler } = require('./commands/tickets/ticketScheduler');
 const logger = require('./lib/logger');
 
 // Global Error Handling
@@ -52,9 +53,12 @@ const client = new Client({
 loadCommands(client);
 loadEvents(client);
 
-client.on('debug', (info) => {
-  console.log(`[DISCORD DEBUG] ${info}`);
-});
+// DEBUG_DISCORD=1 を設定した時だけ詳細ログを出す(常時有効だと大量のログでエラーが埋もれるため)
+if (process.env.DEBUG_DISCORD === '1') {
+  client.on('debug', (info) => {
+    console.log(`[DISCORD DEBUG] ${info}`);
+  });
+}
 
 client.on('error', (error) => {
   console.error(`[DISCORD ERROR] ${error}`);
@@ -66,6 +70,7 @@ client.once('ready', () => {
   startGiveawayScheduler(client);
   startLevelScheduler(client);
   startEarthquakeScheduler(client);
+  startTicketScheduler(client);
 });
 
 client.login(process.env.DISCORD_TOKEN).catch((err) => {

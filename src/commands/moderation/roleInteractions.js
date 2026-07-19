@@ -39,6 +39,9 @@ async function handleAddRole(interaction) {
 async function handleModalSubmit(interaction) {
   if (interaction.customId !== 'role_panel_modal') return;
 
+  // 先にACKする(この後DB操作とメッセージ編集が続くため)。
+  await interaction.deferReply({ ephemeral: true });
+
   const roleId = interaction.fields.getTextInputValue('role_id');
   const label = interaction.fields.getTextInputValue('label');
 
@@ -49,7 +52,7 @@ async function handleModalSubmit(interaction) {
 
   if (!panel) {
     const msg = await tGuild(interaction.guild.id, 'role_panel.not_found');
-    return interaction.reply({ content: msg, ephemeral: true });
+    return interaction.editReply({ content: msg });
   }
 
   // DBにロールを保存
@@ -98,7 +101,7 @@ async function handleModalSubmit(interaction) {
   await message.edit({ components: rows });
   
   const successMsg = await tGuild(interaction.guild.id, 'role_panel.item_added');
-  await interaction.reply({ content: successMsg, ephemeral: true });
+  await interaction.editReply({ content: successMsg });
 }
 
 // ロールの付与/解除トグル

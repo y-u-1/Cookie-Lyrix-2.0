@@ -31,6 +31,10 @@ module.exports = {
         .setDescription('5分ごとに更新される親密度ランキングを設置 / Setup an affinity leaderboard panel')
     ),
   async execute(interaction) {
+    // panelサブコマンドがchannel.send + DB書き込みの後に応答していたため、
+    // 先頭で一律deferしてから各処理を行う。
+    await interaction.deferReply();
+
     const sub = interaction.options.getSubcommand();
 
     if (sub === 'hug' || sub === 'pat') {
@@ -39,7 +43,7 @@ module.exports = {
       if (target.id === interaction.user.id) {
         const msg = await tGuild(interaction.guild.id, 'affinity.self');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.editReply({ embeds: [embed]});
       }
 
       const points = Math.floor(Math.random() * 10) + 1;
@@ -59,7 +63,7 @@ module.exports = {
       });
       
       const embed = new EmbedBuilder().setColor(0xEB459E).setDescription(msg);
-      await interaction.reply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
 
     } else if (sub === 'leaderboard') {
       const affinities = await getTopAffinity(interaction.guild.id, 10);
@@ -74,7 +78,7 @@ module.exports = {
         .setTitle(title)
         .setDescription(lines.length ? lines.join('\n') : noData);
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
 
     } else if (sub === 'panel') {
       const title = await tGuild(interaction.guild.id, 'affinity.panel_title');
@@ -108,7 +112,7 @@ module.exports = {
 
       const successMsg = await tGuild(interaction.guild.id, 'affinity.panel_created');
       const successEmbed = new EmbedBuilder().setColor(0x57F287).setDescription(successMsg);
-      await interaction.reply({ embeds: [successEmbed], ephemeral: true });
+      await interaction.editReply({ embeds: [successEmbed]});
     }
   },
 };

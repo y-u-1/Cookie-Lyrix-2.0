@@ -97,6 +97,10 @@ function buildGiveawayCommand({ name, description }) {
   return {
     data: builder,
     async execute(interaction) {
+      // start(パネル投稿)・end(当選発表)など、Discord APIへの実通信やDB書き込みを
+      // 伴うサブコマンドが複数あるため、先頭で一律deferしてから各処理に振り分ける。
+      await interaction.deferReply({ ephemeral: true });
+
       const group = interaction.options.getSubcommandGroup();
       const sub = interaction.options.getSubcommand();
       
@@ -121,7 +125,7 @@ async function findGiveaway(interaction) {
 
 async function replyMsg(interaction, msgKey, params = {}) {
   const msg = await tGuild(interaction.guildId, msgKey, params);
-  return interaction.reply({ content: msg, ephemeral: true });
+  return interaction.editReply({ content: msg });
 }
 
 async function handleStart(interaction) {
@@ -184,7 +188,7 @@ async function handleDelete(interaction) {
   if (!giveaway) return replyMsg(interaction, 'giveaway.end.not_found');
   await deleteGiveaway(interaction.client, giveaway.id);
   // 削除はシンプルに固定的なメッセージでも良いが、多言語化するならキーを追加する必要がある。ここでは英語をデフォルトに。
-  return interaction.reply({ content: '### Giveaway Deleted\nThe giveaway was successfully deleted.', ephemeral: true });
+  return interaction.editReply({ content: '### Giveaway Deleted\nThe giveaway was successfully deleted.' });
 }
 
 async function handleEdit(interaction) {
@@ -219,15 +223,15 @@ async function handleEdit(interaction) {
     if (result.error === 'not_entered') return replyMsg(interaction, 'giveaway.weight.not_entered', { user: user.toString() });
   }
 
-  return interaction.reply({ content: '### Giveaway Updated\nThe giveaway settings were updated.', ephemeral: true });
+  return interaction.editReply({ content: '### Giveaway Updated\nThe giveaway settings were updated.' });
 }
 
 async function handleFix(interaction) {
   const giveaway = await findGiveaway(interaction);
   if (!giveaway) return replyMsg(interaction, 'giveaway.end.not_found');
   const result = await fixGiveaway(interaction.client, giveaway.id);
-  if (result.error) return interaction.reply({ content: '### Error\nCould not fix the giveaway.', ephemeral: true });
-  return interaction.reply({ content: `### Giveaway Fixed\nAction: \`${result.action}\``, ephemeral: true });
+  if (result.error) return interaction.editReply({ content: '### Error\nCould not fix the giveaway.' });
+  return interaction.editReply({ content: `### Giveaway Fixed\nAction: \`${result.action}\`` });
 }
 
 async function handleRoles(interaction) {
@@ -250,7 +254,7 @@ async function handleList(interaction) {
   });
 
   const title = await tGuild(interaction.guildId, 'giveaway.list.title');
-  return interaction.reply({ content: `${title}\n\n${lines.join('\n')}`, ephemeral: true });
+  return interaction.editReply({ content: `${title}\n\n${lines.join('\n')}` });
 }
 
 async function handleTemplate(interaction, action) {
@@ -286,7 +290,7 @@ async function handleTemplate(interaction, action) {
       return `**${t.name}** - ${winners}, ${duration}`;
     });
     const title = await tGuild(interaction.guildId, 'giveaway.template.list_title');
-    return interaction.reply({ content: `${title}\n\n${lines.join('\n')}`, ephemeral: true });
+    return interaction.editReply({ content: `${title}\n\n${lines.join('\n')}` });
   }
 
   if (action === 'use') {

@@ -7,6 +7,7 @@ const { route: roleRoute } = require('../commands/moderation/roleInteractions');
 const { route: pollRoute } = require('../commands/general/pollInteractions');
 const { route: levelRoute } = require('../commands/level/levelInteractions');
 const { route: economyRoute } = require('../commands/economy/economyInteractions');
+const { route: affinityRoute } = require('../commands/general/affinityInteractions');
 const { handleOpenModal: redeemOpenModal, handleSubmit: redeemSubmit } = require('../commands/economy/redeem');
 const { permissionKeyFor, hasPermission } = require('../lib/permissions');
 const { tGuild } = require('../lib/i18n');
@@ -31,14 +32,10 @@ module.exports = {
   name: 'interactionCreate',
   async execute(interaction, client) {
     // ボタンとモーダルの処理
+    // 【重要】ここで一律にdeferReplyすると、各ハンドラが個別に行うdeferReplyと二重になったり、
+    // showModal()(Redeemの引き換えボタン・ロール追加ボタンなど)がdeferReply後には呼べず
+    // 必ずエラーになる。ACK(defer/reply/showModal)は各ハンドラの責任で行う。
     if (interaction.isButton() || interaction.isModalSubmit()) {
-      // 🚨 重要: 受け取った瞬間に必ず応答を返す
-      if (!interaction.deferred && !interaction.replied) {
-        try {
-          await interaction.deferReply({ ephemeral: true }).catch(e => console.error('DeferReply Error:', e));
-        } catch (e) {}
-      }
-
       try {
         if (interaction.customId.startsWith('giveaway_')) await giveawayRoute(interaction);
         else if (interaction.customId.startsWith('ticket_')) await ticketRoute(interaction);
@@ -47,6 +44,7 @@ module.exports = {
         else if (interaction.customId.startsWith('poll_vote_')) await pollRoute(interaction);
         else if (interaction.customId.startsWith('level_page_')) await levelRoute(interaction);
         else if (interaction.customId.startsWith('coin_page_')) await economyRoute(interaction);
+        else if (interaction.customId.startsWith('affinity_page_')) await affinityRoute(interaction);
         else if (interaction.customId === 'redeem_open_modal') await redeemOpenModal(interaction);
         else if (interaction.customId === 'redeem_submit') await redeemSubmit(interaction);
         else if (interaction.customId === 'role_panel_modal') await roleRoute(interaction);

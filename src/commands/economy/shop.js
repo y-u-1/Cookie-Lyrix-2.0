@@ -31,7 +31,11 @@ module.exports = {
         .addStringOption((opt) => opt.setName('id').setDescription('商品ID / Item ID').setRequired(true))
     ),
   async execute(interaction) {
+    // buyサブコマンドがロール付与(Discord API)やDB操作を複数回行った後に
+    // 応答していたため、先頭で一律deferしてから各処理を行う。
+    // (ephemeralはdefer時にしか指定できないため、sellのみ非公開のまま維持する)
     const sub = interaction.options.getSubcommand();
+    await interaction.deferReply({ ephemeral: sub === 'sell' });
 
     if (sub === 'list') {
       const listings = await prisma.privateShopListing.findMany({
@@ -41,7 +45,7 @@ module.exports = {
       if (listings.length === 0) {
         const msg = await tGuild(interaction.guild.id, 'shop.no_listings');
         const embed = new EmbedBuilder().setColor(0x5865F2).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.editReply({ embeds: [embed]});
       }
 
       const lines = listings.map((l) => {
@@ -55,7 +59,7 @@ module.exports = {
         .setTitle(title)
         .setDescription(lines.join('\n\n'));
       
-      await interaction.reply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
 
     } else if (sub === 'sell') {
       const name = interaction.options.getString('name');
@@ -86,7 +90,7 @@ module.exports = {
         .setDescription(`${msg}\n${detail}`)
         .setFooter({ text: footerText });
       
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.editReply({ embeds: [embed]});
 
     } else if (sub === 'buy') {
       const id = interaction.options.getString('id');
@@ -100,7 +104,7 @@ module.exports = {
       if (updateResult.count === 0) {
         const msg = await tGuild(interaction.guild.id, 'shop.not_found');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.editReply({ embeds: [embed]});
       }
 
       // 在庫を引いた後、商品情報を取得
@@ -112,7 +116,7 @@ module.exports = {
         await prisma.privateShopListing.update({ where: { id }, data: { quantity: { increment: 1 } } });
         const msg = await tGuild(interaction.guild.id, 'shop.insufficient_funds');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.editReply({ embeds: [embed]});
       }
 
       // 購入処理
@@ -132,7 +136,7 @@ module.exports = {
 
       const msg = await tGuild(interaction.guild.id, 'shop.purchased', { name: listing.name, price: listing.price });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg).setThumbnail(listing.imageUrl || null);
-      await interaction.reply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
 
       // 販売者に通知
       try {

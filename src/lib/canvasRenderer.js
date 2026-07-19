@@ -65,8 +65,9 @@ async function renderRankCard(user, rankData) {
   ctx.font = 'bold 24px "Noto Sans JP"';
   ctx.fillStyle = '#DCDDDE';
   ctx.textAlign = 'right';
+  const currentXp = Number(rankData.xp); // BigIntのままだとNumberとの算術演算でエラーになるため変換
   const nextXp = Math.floor(rankData.nextLevelXp);
-  ctx.fillText(`${rankData.xp} / ${nextXp} XP`, 870, 110);
+  ctx.fillText(`${currentXp} / ${nextXp} XP`, 870, 110);
 
   // プログレスバー (紫)
   const barX = 270;
@@ -81,7 +82,7 @@ async function renderRankCard(user, rankData) {
   ctx.fill();
 
   // バーの進捗
-  const progress = Math.min(1, rankData.xp / nextXp);
+  const progress = nextXp > 0 ? Math.min(1, currentXp / nextXp) : 1;
   ctx.fillStyle = '#B89CFF'; // 紫色
   ctx.beginPath();
   ctx.roundRect(barX, barY, barWidth * progress, barHeight, 10);

@@ -31,6 +31,9 @@ module.exports = {
         .addStringOption((opt) => opt.setName('reason').setDescription('理由 / Reason').setRequired(false))
     ),
   async execute(interaction) {
+    // DM送信・kick/ban実行・DB書き込みなど時間のかかる処理が続くため、先にACKする。
+    await interaction.deferReply({ ephemeral: true });
+
     const sub = interaction.options.getSubcommand();
     const user = interaction.options.getUser('user');
     const reason = interaction.options.getString('reason') ?? await tGuild(interaction.guild.id, 'mod.no_reason');
@@ -42,7 +45,7 @@ module.exports = {
     if (member && member.roles.highest.position >= interaction.member.roles.highest.position) {
       const msg = await tGuild(interaction.guild.id, 'mod.error_hierarchy');
       const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.editReply({ embeds: [embed] });
     }
 
     let titleKey, descKey, successKey;
@@ -87,13 +90,13 @@ module.exports = {
       if (isKick) {
         if (!interaction.appPermissions.has(PermissionFlagsBits.KickMembers)) {
           const msg = await tGuild(interaction.guild.id, 'mod.error_missing_perms');
-          return interaction.reply({ content: msg, ephemeral: true });
+          return interaction.editReply({ content: msg });
         }
         await member.kick(reason);
       } else if (isBan) {
         if (!interaction.appPermissions.has(PermissionFlagsBits.BanMembers)) {
           const msg = await tGuild(interaction.guild.id, 'mod.error_missing_perms');
-          return interaction.reply({ content: msg, ephemeral: true });
+          return interaction.editReply({ content: msg });
         }
         await interaction.guild.bans.create(user.id, { reason });
       } else if (sub === 'warn') {
@@ -110,13 +113,13 @@ module.exports = {
     } catch (e) {
       logger.error('Moderation action error:', e);
       const errMsg = await tGuild(interaction.guild.id, 'mod.action_failed');
-      return interaction.reply({ content: errMsg, ephemeral: true });
+      return interaction.editReply({ content: errMsg });
     }
 
     // 成功メッセージ
     const successMsg = await tGuild(interaction.guild.id, successKey, { user: user.toString(), reason: reason });
     const successEmbed = new EmbedBuilder().setColor(0x57F287).setDescription(successMsg);
-    await interaction.reply({ embeds: [successEmbed] });
+    await interaction.editReply({ embeds: [successEmbed] });
 
     // ログ送信
     const logChannelSetting = await prisma.logChannel.findUnique({

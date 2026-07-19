@@ -39,6 +39,10 @@ module.exports = {
         .setDescription('5分ごとに更新されるコインランキングを設置 / Setup a coin leaderboard panel')
     ),
   async execute(interaction) {
+    // panelサブコマンドがchannel.send + DB書き込みの後に応答していたため、
+    // 先頭で一律deferしてから各処理を行う。
+    await interaction.deferReply({ ephemeral: false });
+
     const sub = interaction.options.getSubcommand();
 
     if (sub === 'check') {
@@ -52,7 +56,7 @@ module.exports = {
         msg = await tGuild(interaction.guild.id, 'economy.coins_other', { user: user.toString(), coins: coins });
       }
       const embed = new EmbedBuilder().setColor(0x5865F2).setDescription(msg);
-      await interaction.reply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
 
     } else if (sub === 'add') {
       const user = interaction.options.getUser('user');
@@ -61,7 +65,7 @@ module.exports = {
       
       const msg = await tGuild(interaction.guild.id, 'economy.coins_added', { user: user.toString(), amount: amount });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
-      await interaction.reply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
 
     } else if (sub === 'remove') {
       const user = interaction.options.getUser('user');
@@ -70,7 +74,7 @@ module.exports = {
       
       const msg = await tGuild(interaction.guild.id, 'economy.coins_removed', { user: user.toString(), amount: amount });
       const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-      await interaction.reply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
 
     } else if (sub === 'leaderboard') {
       const topUsers = await getTopUsersByCoins(interaction.guild.id, 30);
@@ -84,7 +88,7 @@ module.exports = {
         .setDescription(lines.length ? lines.join('\n') : noData)
         .setTimestamp();
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
 
     } else if (sub === 'panel') {
       const title = await tGuild(interaction.guild.id, 'economy.coin_panel_title');
@@ -118,7 +122,7 @@ module.exports = {
 
       const successMsg = await tGuild(interaction.guild.id, 'economy.coin_panel_created');
       const successEmbed = new EmbedBuilder().setColor(0x57F287).setDescription(successMsg);
-      await interaction.reply({ embeds: [successEmbed], ephemeral: true });
+      await interaction.editReply({ embeds: [successEmbed] });
     }
   },
 };

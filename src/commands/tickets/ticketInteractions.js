@@ -3,11 +3,23 @@ const { ChannelType, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, Button
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
+// 「作成」ボタンを連打した際に、確認(findFirst)と作成(create)の間の
+// タイムラグを突いてチケットが2つ作られてしまうのを防ぐための簡易ロック。
+const creatingLock = new Set();
+
 async function handleCreate(interaction) {
   const guildId = interaction.guild.id;
   const userId = interaction.user.id;
+  const lockKey = `${guildId}:${userId}`;
 
   await interaction.deferReply({ ephemeral: true });
+
+  if (creatingLock.has(lockKey)) {
+    const msg = await tGuild(guildId, 'ticket.already_open');
+    const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
+    return interaction.editReply({ embeds: [embed] });
+  }
+  creatingLock.add(lockKey);
 
   try {
     const existingTicket = await prisma.ticket.findFirst({
@@ -95,6 +107,8 @@ async function handleCreate(interaction) {
     } else {
       await interaction.reply({ content: errorMsg, ephemeral: true }).catch(() => {});
     }
+  } finally {
+    creatingLock.delete(lockKey);
   }
 }
 
@@ -157,10 +171,9 @@ async function handleClose(interaction) {
   
   await interaction.editReply({ embeds: [embed] });
 
-  setTimeout(async () => {
-    const channel = interaction.guild.channels.cache.get(interaction.channel.id);
-    if (channel) await channel.delete().catch(() => {});
-  }, 10000);
+  // チャンネルの削除はticketScheduler.jsが定期的にDBを見て行う。
+  // (以前はsetTimeoutで10秒後に削除していたが、その間にBotが再起動すると
+  //  タイマーが消えてしまい、チャンネルだけ残る「ゴーストチケット」になっていた)
 }
 
 async function route(interaction) {

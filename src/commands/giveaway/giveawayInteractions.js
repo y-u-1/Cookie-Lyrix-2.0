@@ -104,21 +104,29 @@ async function handleLeave(interaction) {
 }
 
 async function handleParticipantsOpen(interaction) {
+  // 先にACKする(この後複数回のDB問い合わせが続くため)。
+  await interaction.deferReply({ ephemeral: true });
+
   const giveaway = await prisma.giveaway.findUnique({ where: { messageId: interaction.message.id } });
-  if (!giveaway) return interaction.reply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('Giveaway not found.')], ephemeral: true });
-  if (interaction.user.id !== giveaway.hostId) return interaction.reply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('Only the host can view participants.')], ephemeral: true });
+  if (!giveaway) return interaction.editReply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('Giveaway not found.')] });
+  if (interaction.user.id !== giveaway.hostId) return interaction.editReply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('Only the host can view participants.')] });
 
   const { embed, row } = await buildParticipantsPage(giveaway.id, 0);
-  return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  return interaction.editReply({ embeds: [embed], components: [row] });
 }
 
 async function handleParticipantsPage(interaction) {
+  // 先にACKする(deferUpdateはボタンを押した見た目のまま裏で処理を続けられる)。
+  await interaction.deferUpdate();
+
   const [, giveawayId, pageStr] = interaction.customId.split(':');
   const giveaway = await prisma.giveaway.findUnique({ where: { id: giveawayId } });
-  if (!giveaway || interaction.user.id !== giveaway.hostId) return interaction.reply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('Only the host can view participants.')], ephemeral: true });
+  if (!giveaway || interaction.user.id !== giveaway.hostId) {
+    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('Only the host can view participants.')], ephemeral: true }).catch(() => {});
+  }
 
   const { embed, row } = await buildParticipantsPage(giveawayId, parseInt(pageStr, 10) || 0);
-  return interaction.update({ embeds: [embed], components: [row] }).catch(() => {});
+  return interaction.editReply({ embeds: [embed], components: [row] }).catch(() => {});
 }
 
 async function route(interaction) {
