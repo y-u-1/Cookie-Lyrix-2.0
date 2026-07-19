@@ -32,13 +32,10 @@ module.exports = {
   async execute(interaction, client) {
     // ボタンとモーダルの処理
     if (interaction.isButton() || interaction.isModalSubmit()) {
-      console.log(`[DEBUG] Interaction received: ${interaction.customId}`);
-      
-      // 3秒以内に応答できない可能性があるため、即座に遅延応答（処理中）を返す
+      // 🚨 重要: 受け取った瞬間に必ず応答を返す
       if (!interaction.deferred && !interaction.replied) {
         try {
           await interaction.deferReply({ ephemeral: true }).catch(e => console.error('DeferReply Error:', e));
-          console.log(`[DEBUG] Deferred reply sent for: ${interaction.customId}`);
         } catch (e) {}
       }
 
@@ -53,8 +50,6 @@ module.exports = {
         else if (interaction.customId === 'redeem_open_modal') await redeemOpenModal(interaction);
         else if (interaction.customId === 'redeem_submit') await redeemSubmit(interaction);
         else if (interaction.customId === 'role_panel_modal') await roleRoute(interaction);
-        
-        console.log(`[DEBUG] Interaction processed successfully: ${interaction.customId}`);
       } catch (err) {
         console.error(`[ERROR] Interaction error (${interaction.customId}):`, err);
         await safeReply(interaction, '処理中にエラーが発生しました。');

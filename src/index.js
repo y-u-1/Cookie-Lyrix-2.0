@@ -52,6 +52,14 @@ const client = new Client({
 loadCommands(client);
 loadEvents(client);
 
+client.on('debug', (info) => {
+  console.log(`[DISCORD DEBUG] ${info}`);
+});
+
+client.on('error', (error) => {
+  console.error(`[DISCORD ERROR] ${error}`);
+});
+
 startKeepAlive('Cookie Lyrix 2.0');
 
 client.once('ready', () => {
