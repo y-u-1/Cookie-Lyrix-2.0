@@ -1,0 +1,22 @@
+# 依存パッケージ
+node_modules/
+
+# 環境変数（絶対に公開してはいけないファイル）
+.env
+
+# ビルド成果物
+dist/
+build/
+
+# ログファイル
+*.log
+npm-debug.log*
+
+# OS固有のファイル
+.DS_Store
+Thumbs.db
+
+# Prismaのローカル一時ファイル
+prisma/migrations/dev.db*"cookie-lyrix.7z" 
+*.7z
+cookie-lyrix.7z

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: cookie-lyrics-2.0
+    env: node
+    buildCommand: npm install
+    preDeployCommand: npx prisma migrate deploy
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.0.0

@@ -1,0 +1,31 @@
+{
+  "name": "cookie-lyrix-2.0",
+  "version": "2.0.0",
+  "description": "Cookie Lyrix 2.0 - 多機能Discord Bot",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "bin": {
+    "cookie": "cli.js"
+  },
+  "scripts": {
+    "start": "npx prisma generate && node src/index.js",
+    "dev": "node --watch src/index.js",
+    "deploy": "node src/deploy-commands.js",
+    "prisma:generate": "prisma generate",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@fontsource/noto-sans-jp": "^5.2.9",
+    "@napi-rs/canvas": "^0.1.53",
+    "@prisma/client": "^5.19.1",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "prisma": "5.19.1"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

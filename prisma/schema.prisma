@@ -1,0 +1,365 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model GuildSettings {
+  id               String   @id @default(cuid())
+  guildId          String   @unique
+  language         String   @default("ja")
+  welcomeChannelId String?
+  leaveChannelId   String?
+  autoRoleId       String?
+  earthquakeChannelId String?
+  earthquakeMinScale Int      @default(4)
+  antiraidEnabled        Boolean  @default(false)
+  antiraidJoinThreshold  Int      @default(8)
+  antiraidJoinWindowSec  Int      @default(10)
+  antiraidMinAccountAgeHours Int @default(0)
+  antiraidAction         String   @default("kick")
+  tempVcChannelId    String?
+  tempVcCategoryId   String?
+  starboardChannelId String?
+  starboardThreshold Int      @default(5)
+  aiPersona          String   @default("normal")
+  floodThreshold     Int      @default(5)
+  floodWindowSec     Int      @default(5)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  logChannels LogChannel[] @relation("GuildLogChannels")
+}
+
+model Giveaway {
+  id               String   @id @default(cuid())
+  shortId          String   @unique
+  kind             String   @default("NORMAL")
+  guildId          String
+  channelId        String
+  messageId        String?  @unique
+  imageUrl         String?
+  thumbnailUrl     String?
+  prize            String
+  winnerCount      Int      @default(1)
+  hostId           String
+  endsAt           DateTime
+  status           String   @default("ACTIVE")
+  color            Int?
+  endColor         Int?
+  requiredRoleId   String?
+  bypassRoleId     String?
+  winnersRoleId    String?
+  requiredLevel    Int?
+  coinPrize        BigInt?
+  winnersDmMessage String?
+  winnerIds        String?
+  createdAt        DateTime @default(now())
+
+  entries          GiveawayEntry[]
+
+  @@index([guildId])
+  @@index([status, endsAt])
+}
+
+model GiveawayEntry {
+  id         String   @id @default(cuid())
+  giveawayId String
+  userId     String
+  weight     Float    @default(1)
+  enteredAt  DateTime @default(now())
+
+  giveaway   Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+
+  @@unique([giveawayId, userId])
+  @@index([giveawayId])
+}
+
+model GiveawayTemplate {
+  id               String   @id @default(cuid())
+  guildId          String
+  name             String
+  durationMs       Int?
+  winnerCount      Int?
+  channelId        String?
+  hostId           String?
+  imageUrl         String?
+  thumbnailUrl     String?
+  color            Int?
+  endColor         Int?
+  requiredRoleId   String?
+  bypassRoleId     String?
+  winnersRoleId    String?
+  requiredLevel    Int?
+  winnersDmMessage String?
+  creationMessage  String?
+  coinPrize        BigInt?
+  createdAt        DateTime @default(now())
+
+  @@unique([guildId, name])
+  @@index([guildId])
+}
+
+model CommandPermission {
+  id      String @id @default(cuid())
+  guildId String
+  key     String
+  roleId  String
+
+  @@unique([guildId, key, roleId])
+  @@index([guildId, key])
+}
+
+model TicketPanel {
+  id              String   @id @default(cuid())
+  guildId         String
+  channelId       String
+  messageId       String   @unique
+  title           String?
+  description     String?
+  createdAt       DateTime @default(now())
+
+  @@index([guildId])
+}
+
+model Ticket {
+  id              String   @id @default(cuid())
+  guildId         String
+  channelId       String   @unique
+  ownerId         String
+  status          String   @default("OPEN")
+  createdAt       DateTime @default(now())
+  closedAt        DateTime?
+  closedBy        String?
+
+  @@index([guildId])
+}
+
+model TicketSettings {
+  id              String   @id @default(cuid())
+  guildId         String   @unique
+  categoryId      String?
+  staffRoleId     String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model VerifyPanel {
+  id                String   @id @default(cuid())
+  guildId           String
+  channelId         String
+  messageId         String   @unique
+  roleId            String
+  title             String?
+  description       String?
+  blockGuildIds     String?
+  minAccountAgeDays Int      @default(0)
+  createdAt         DateTime @default(now())
+
+  @@index([guildId])
+}
+
+model RolePanel {
+  id           String   @id @default(cuid())
+  guildId      String
+  channelId    String
+  messageId    String   @unique
+  title        String
+  description  String
+  createdAt    DateTime @default(now())
+
+  roles        RolePanelItem[]
+
+  @@index([guildId])
+}
+
+model RolePanelItem {
+  id           String   @id @default(cuid())
+  panelId      String
+  roleId       String
+  label        String
+  style        Int      @default(2)
+  emoji        String?
+
+  panel        RolePanel @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@index([panelId])
+}
+
+model Poll {
+  id          String   @id @default(cuid())
+  guildId     String
+  channelId   String
+  messageId   String?  @unique
+  question    String
+  hostId      String
+  status      String   @default("ACTIVE")
+  multiVote   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  options     PollOption[]
+
+  @@index([guildId])
+}
+
+model PollOption {
+  id      String @id @default(cuid())
+  pollId  String
+  label   String
+  votes   PollVote[]
+  poll    Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@index([pollId])
+}
+
+model PollVote {
+  id       String @id @default(cuid())
+  optionId String
+  userId   String
+  option   PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, userId])
+  @@index([optionId])
+}
+
+model Warning {
+  id          String   @id @default(cuid())
+  guildId     String
+  userId      String
+  moderatorId String
+  reason      String
+  createdAt   DateTime @default(now())
+
+  @@index([guildId, userId])
+}
+
+model LogChannel {
+  id        String   @id @default(cuid())
+  guildId   String
+  type      String
+  channelId String
+
+  guildSettings GuildSettings @relation("GuildLogChannels", fields: [guildId], references: [guildId])
+
+  @@unique([guildId, type])
+  @@index([guildId])
+}
+
+model UserActivity {
+  id        String   @id @default(cuid())
+  guildId   String
+  userId    String
+  xp        BigInt   @default(0)
+  level     Int      @default(0)
+  coins     BigInt   @default(3000)
+  lastXpAt  DateTime?
+  lastDailyAt DateTime?
+  updatedAt DateTime @updatedAt
+
+  @@unique([guildId, userId])
+  @@index([guildId])
+}
+
+model LeaderboardPanel {
+  id        String   @id @default(cuid())
+  guildId   String
+  channelId String
+  messageId String   @unique
+  type      String   @default("XP")
+  createdAt DateTime @default(now())
+
+  @@unique([guildId, type])
+  @@index([guildId])
+}
+
+model NgWord {
+  id      String @id @default(cuid())
+  guildId String
+  word    String
+
+  @@unique([guildId, word])
+  @@index([guildId])
+}
+
+model PrivateShopListing {
+  id          String   @id @default(cuid())
+  guildId     String
+  sellerId    String
+  name        String
+  description String?
+  price       BigInt
+  quantity    BigInt   @default(1)
+  active      Boolean  @default(true)
+  roleId      String?
+  imageUrl    String?
+  channelId   String?
+  messageId   String?
+  createdAt   DateTime @default(now())
+
+  @@index([guildId])
+  @@index([guildId, sellerId])
+}
+
+model AntiRaidTracker {
+  id        String   @id @default(cuid())
+  guildId   String
+  joinedAt  DateTime @default(now())
+
+  @@index([guildId])
+}
+
+model RedeemCode {
+  id              String   @id @default(cuid())
+  guildId         String
+  code            String   @unique
+  coins           Int
+  customMessage   String?
+  maxUses         Int      @default(1)
+  maxUsesPerUser  Int      @default(1)
+  uses            Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  usages          RedeemCodeUsage[]
+
+  @@index([guildId])
+}
+
+model RedeemCodeUsage {
+  id        String @id @default(cuid())
+  codeId    String
+  userId    String
+  count     Int    @default(0)
+  
+  code      RedeemCode @relation(fields: [codeId], references: [id], onDelete: Cascade)
+
+  @@unique([codeId, userId])
+  @@index([codeId])
+}
+
+model StarboardMessage {
+  id           String   @id @default(cuid())
+  guildId      String
+  channelId    String
+  messageId    String   @unique
+  starboardMsgId String?
+  stars        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([guildId])
+}
+
+model UserAffinity {
+  id       String @id @default(cuid())
+  guildId  String
+  userId   String
+  targetId String
+  points   Int    @default(0)
+
+  @@unique([guildId, userId, targetId])
+  @@index([guildId])
+}
