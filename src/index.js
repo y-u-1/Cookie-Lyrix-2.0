@@ -25,6 +25,18 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
+// メモリ使用量の監視
+setInterval(() => {
+  const memory = process.memoryUsage();
+  const usedMB = Math.round(memory.rss / 1024 / 1024);
+  logger.info(`[Memory Usage] RSS: ${usedMB} MB / 512 MB`);
+  
+  // メモリ使用量が400MBを超えたら警告
+  if (usedMB > 400) {
+    logger.warn('[Memory Warning] メモリ使用量が400MBを超えました！クラッシュの危険があります。');
+  }
+}, 60000); // 1分ごと
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,

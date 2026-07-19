@@ -11,11 +11,36 @@ const { handleOpenModal: redeemOpenModal, handleSubmit: redeemSubmit } = require
 const { permissionKeyFor, hasPermission } = require('../lib/permissions');
 const { tGuild } = require('../lib/i18n');
 
+// 安全な応答関数（エラーで二重応答になるのを防ぐ）
+async function safeReply(interaction, content, ephemeral = true) {
+  try {
+    if (interaction.deferred) {
+      if (interaction.replied) {
+        await interaction.followUp({ content, ephemeral });
+      } else {
+        await interaction.editReply({ content });
+      }
+    } else if (!interaction.replied) {
+      await interaction.reply({ content, ephemeral });
+    }
+  } catch (e) {
+    // 応答時にエラーが出ても無視してクラッシュを防ぐ
+    logger.error('SafeReply Error:', e);
+  }
+}
+
 module.exports = {
   name: 'interactionCreate',
   async execute(interaction, client) {
     // ボタンとモーダルの処理
     if (interaction.isButton() || interaction.isModalSubmit()) {
+      // 3秒以内に応答できない可能性があるため、即座に遅延応答（処理中）を返す
+      if (!interaction.deferred && !interaction.replied) {
+        try {
+          await interaction.deferReply({ ephemeral: true }).catch(() => {});
+        } catch (e) {}
+      }
+
       try {
         if (interaction.customId.startsWith('giveaway_')) await giveawayRoute(interaction);
         else if (interaction.customId.startsWith('ticket_')) await ticketRoute(interaction);
@@ -29,14 +54,7 @@ module.exports = {
         else if (interaction.customId === 'role_panel_modal') await roleRoute(interaction);
       } catch (err) {
         logger.error('Interaction error:', err);
-        const errorMsg = 'An error occurred.';
-        try {
-          if (interaction.deferred) {
-            await interaction.editReply({ content: errorMsg });
-          } else if (!interaction.replied) {
-            await interaction.reply({ content: errorMsg, ephemeral: true });
-          }
-        } catch (e) {}
+        await safeReply(interaction, '処理中にエラーが発生しました。');
       }
       return;
     }
@@ -58,16 +76,7 @@ module.exports = {
       await command.execute(interaction);
     } catch (error) {
       logger.error(`Command execution error (${interaction.commandName}):`, error);
-      const errorMsg = 'An error occurred during command execution.';
-      try {
-        if (interaction.deferred) {
-          await interaction.editReply({ content: errorMsg });
-        } else if (interaction.replied) {
-          await interaction.followUp({ content: errorMsg, ephemeral: true });
-        } else {
-          await interaction.reply({ content: errorMsg, ephemeral: true });
-        }
-      } catch (e) {}
+      await safeReply(interaction, 'コマンドの実行中にエラーが発生しました。');
     }
   },
 };
