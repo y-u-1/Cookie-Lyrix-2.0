@@ -29,9 +29,6 @@ function startEarthquakeScheduler(client) {
       // 新しい地震情報を検知
       lastEarthquakeId = latest.id;
 
-      // 震度4(40)以上の情報のみ通知
-      //if (latest.earthquake.maxScale < 40) return;
-
       // 通知を有効にしているサーバーを取得
       const guilds = await prisma.guildSettings.findMany({
         where: { earthquakeChannelId: { not: null } }
@@ -68,6 +65,7 @@ function startEarthquakeScheduler(client) {
             { name: depthText, value: latest.earthquake.hypocenter.depth, inline: true },
             { name: timeText, value: time, inline: true }
           )
+          .setFooter({ text: '地図データ: 国土地理院 地球地図日本' })
           .setTimestamp();
 
         await channel.send({ embeds: [embed], files: [attachment] }).catch(() => {});

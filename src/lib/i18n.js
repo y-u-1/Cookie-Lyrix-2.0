@@ -46,9 +46,12 @@ const messages = {
     'giveaway.enter.account_too_new': '### アカウント年齢不足\n参加には {min_age} 日以上のアカウントが必要です。\nあなたのアカウント年齢: {account_age} 日',
     'giveaway.enter.missing_role': '### 権限不足\nこのギブアウェイに参加するには {role} が必要です。',
     'giveaway.leave.button': '参加を取り消す',
+    'giveaway.enter.button': '参加する',
     'giveaway.enter.already_entered_with_leave': '### 参加済み\nすでにこのギブアウェイに参加しています。\n参加を取り消す場合は以下のボタンをクリックしてください。',
     'giveaway.enter.confirmed': '### 参加確定\n**{prize}** の抽選に参加しました！',
     'giveaway.leave.success': '### 参加を取り消しました\nこのギブアウェイへの参加を取り消しました。',
+    'giveaway.participants.button': '参加者一覧',
+    'giveaway.participants.title': '参加者一覧',
     'giveaway.weight.not_entered': '### エラー\nユーザー {user} はこのギブアウェイに参加していません。',
     'giveaway.template.invalid_duration': '### 無効な時間指定\n形式は `10m`, `1h`, `1d` のように指定してください。',
     'giveaway.template.saved': '### テンプレート保存完了\nテンプレート **{name}** を保存しました。',
@@ -188,6 +191,7 @@ const messages = {
     'earthquake.time': '発生時刻',
     'earthquake.epicenter': '震源地',
     'earthquake.points': '各地の震度',
+    'earthquake.test_notice': '### ⚠️ これはテスト送信です\n実際の地震情報ではありません。マップの見た目を確認するためのサンプルです。',
 
     // Economy
     'economy.daily_success': '### デイリーボーナス受け取り\n2,500コインを受け取りました！\n現在の所持コイン: **{coins}**',
@@ -534,6 +538,7 @@ const messages = {
     'earthquake.time': 'Time',
     'earthquake.epicenter': 'Epicenter',
     'earthquake.points': 'Points by Scale',
+    'earthquake.test_notice': '### ⚠️ This is a test\nThis is not a real earthquake. It is a sample used to preview the map appearance.',
 
     // Economy
     'economy.daily_success': '### Daily Bonus Claimed\nYou received 2,500 coins!\nCurrent coins: **{coins}**',
