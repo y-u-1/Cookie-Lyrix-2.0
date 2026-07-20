@@ -92,6 +92,7 @@ const messages = {
 
     // Role Panel
     'role.panel_created': '### ロールパネル作成\nロールパネルをこのチャンネルに作成しました。',
+    'role.panel_title': 'ロールパネル',
     'role.panel_desc': '以下のボタンをクリックしてロールを取得・解除できます。',
     'role.added': '### ロール付与\n{role} を付与しました。',
     'role.removed': '### ロール解除\n{role} を解除しました。',
@@ -191,7 +192,7 @@ const messages = {
     'earthquake.time': '発生時刻',
     'earthquake.epicenter': '震源地',
     'earthquake.points': '各地の震度',
-    'earthquake.test_notice': '### ⚠️ これはテスト送信です\n実際の地震情報ではありません。マップの見た目を確認するためのサンプルです。',
+    'earthquake.test_notice': '### これはテスト送信です\n実際の地震情報ではありません。マップの見た目を確認するためのサンプルです。',
 
     // Economy
     'economy.daily_success': '### デイリーボーナス受け取り\n2,500コインを受け取りました！\n現在の所持コイン: **{coins}**',
@@ -241,12 +242,12 @@ const messages = {
     'games.janken_rock': 'グー',
     'games.janken_scissors': 'チョキ',
     'games.janken_paper': 'パー',
-    'games.dice_title': '### 🎲 サイコロ\n{user}は{sides}面ダイスを振って **{result}** が出ました！',
+    'games.dice_title': '### サイコロ\n{user}は{sides}面ダイスを振って **{result}** が出ました！',
     'games.slot_title': 'スロット',
     'games.slot_insufficient_funds': '### エラー\n所持コインが足りません。',
-    'games.slot_jackpot': '### 🎰 大当たり！\n{symbols}\n掛け金の**{multiplier}倍**、**{amount}コイン**を獲得しました！',
-    'games.slot_win': '### 🎰 当たり！\n{symbols}\n掛け金の**{multiplier}倍**、**{amount}コイン**を獲得しました！',
-    'games.slot_lose': '### 🎰 はずれ\n{symbols}\n**{amount}コイン**を失いました。',
+    'games.slot_jackpot': '### 大当たり！\n{symbols}\n掛け金の**{multiplier}倍**、**{amount}コイン**を獲得しました！',
+    'games.slot_win': '### 当たり！\n{symbols}\n掛け金の**{multiplier}倍**、**{amount}コイン**を獲得しました！',
+    'games.slot_lose': '### はずれ\n{symbols}\n**{amount}コイン**を失いました。',
 
     // Redeem Code
     'code.generated': '### ギフトコード生成\nコード: `{code}`\n報酬: {coins} コイン',
@@ -309,7 +310,6 @@ const messages = {
     'role_panel.item_added': '### ロール追加完了\nパネルにロールを追加しました。',
     'role_panel.add_button_label': 'ロールを追加',
     'role_panel.item_not_found': '### エラー\nロールが見つかりません。',
-    'role.panel_title': 'ロールパネル',
 
     // Verify (追加インタラクション用)
     'verify.panel_not_found': '### エラー\nパネルが見つかりません。',
@@ -395,9 +395,12 @@ const messages = {
     'giveaway.enter.account_too_new': '### Account Age Insufficient\nYou need an account that is at least {min_age} days old to enter.\nYour account age: {account_age} days',
     'giveaway.enter.missing_role': '### Missing Requirement\nYou need the {role} role to enter this giveaway.',
     'giveaway.leave.button': 'Leave Giveaway',
+    'giveaway.enter.button': 'Enter',
     'giveaway.enter.already_entered_with_leave': '### Already Entered\nYou are already entered in this giveaway.\nClick the button below if you want to leave.',
     'giveaway.enter.confirmed': '### Entry Confirmed\nYou have entered the giveaway for **{prize}**!',
     'giveaway.leave.success': '### Left Giveaway\nYou have left this giveaway.',
+    'giveaway.participants.button': 'Participants',
+    'giveaway.participants.title': 'Participants',
     'giveaway.weight.not_entered': '### Error\nUser {user} is not entered in this giveaway.',
     'giveaway.template.invalid_duration': '### Invalid Duration\nPlease specify the format like `10m`, `1h`, `1d`.',
     'giveaway.template.saved': '### Template Saved\nTemplate **{name}** has been saved.',
@@ -538,7 +541,7 @@ const messages = {
     'earthquake.time': 'Time',
     'earthquake.epicenter': 'Epicenter',
     'earthquake.points': 'Points by Scale',
-    'earthquake.test_notice': '### ⚠️ This is a test\nThis is not a real earthquake. It is a sample used to preview the map appearance.',
+    'earthquake.test_notice': '### This is a test\nThis is not a real earthquake. It is a sample used to preview the map appearance.',
 
     // Economy
     'economy.daily_success': '### Daily Bonus Claimed\nYou received 2,500 coins!\nCurrent coins: **{coins}**',
@@ -588,12 +591,12 @@ const messages = {
     'games.janken_rock': 'Rock',
     'games.janken_scissors': 'Scissors',
     'games.janken_paper': 'Paper',
-    'games.dice_title': '### 🎲 Dice\n{user} rolled a {sides}-sided die and got **{result}**!',
+    'games.dice_title': '### Dice\n{user} rolled a {sides}-sided die and got **{result}**!',
     'games.slot_title': 'Slots',
     'games.slot_insufficient_funds': '### Error\nYou do not have enough coins.',
-    'games.slot_jackpot': '### 🎰 JACKPOT!\n{symbols}\nYou won **{multiplier}x** your bet: **{amount} coins**!',
-    'games.slot_win': '### 🎰 Win!\n{symbols}\nYou won **{multiplier}x** your bet: **{amount} coins**!',
-    'games.slot_lose': '### 🎰 No Match\n{symbols}\nYou lost **{amount} coins**.',
+    'games.slot_jackpot': '### JACKPOT!\n{symbols}\nYou won **{multiplier}x** your bet: **{amount} coins**!',
+    'games.slot_win': '### Win!\n{symbols}\nYou won **{multiplier}x** your bet: **{amount} coins**!',
+    'games.slot_lose': '### No Match\n{symbols}\nYou lost **{amount} coins**.',
 
     // Redeem Code
     'code.generated': '### Gift Code Generated\nCode: `{code}`\nReward: {coins} coins',
@@ -707,14 +710,8 @@ function t(lang, key, params = {}) {
   return str;
 }
 
-// ギルドの言語設定をメモリ上にキャッシュする。
-// 以前はtGuild()を呼ぶたびに毎回DBへ問い合わせていたため、
-// 1コマンド内で複数回tGuildを呼ぶ処理(多いものだと10回以上)が
-// そのままDB往復回数になり、応答が3秒のインタラクション期限に
-// 間に合わないことがあった。言語設定は/languageコマンドでしか
-// 変わらないため、短いTTL付きのキャッシュで安全に高速化する。
-const langCache = new Map(); // guildId -> { lang, expiresAt }
-const LANG_CACHE_TTL_MS = 5 * 60 * 1000; // 5分
+const langCache = new Map();
+const LANG_CACHE_TTL_MS = 5 * 60 * 1000;
 
 async function getGuildLanguage(guildId) {
   const cached = langCache.get(guildId);
@@ -727,8 +724,6 @@ async function getGuildLanguage(guildId) {
   return lang;
 }
 
-// /language コマンドなど、言語設定を明示的に変更した直後に呼び出すことで、
-// TTLを待たずにキャッシュを即座に更新する。
 function setGuildLanguageCache(guildId, lang) {
   langCache.set(guildId, { lang, expiresAt: Date.now() + LANG_CACHE_TTL_MS });
 }
