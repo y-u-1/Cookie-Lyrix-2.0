@@ -1,6 +1,6 @@
 // src/commands/economy/gamble.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { getCoins, addCoins, removeCoins } = require('../../lib/levelService');
+const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
 module.exports = {
@@ -11,48 +11,55 @@ module.exports = {
       opt.setName('amount').setDescription('掛け金 / Bet amount').setMinValue(100).setMaxValue(1000000).setRequired(true)
     ),
   async execute(interaction) {
+    const guildId = interaction.guild.id;
+    const userId = interaction.user.id;
     const amount = interaction.options.getInteger('amount');
-    const currentCoins = await getCoins(interaction.guild.id, interaction.user.id);
 
-    if (currentCoins < BigInt(amount)) {
-      const msg = await tGuild(interaction.guild.id, 'gamble.insufficient_funds');
+    const result = Math.floor(Math.random() * 4);
+    let msgKey, resultAmount, color, delta;
+
+    switch (result) {
+      case 0: // -75%
+        msgKey = 'gamble.result_75_loss';
+        resultAmount = Math.floor(amount * 0.75);
+        delta = -resultAmount;
+        color = 0xED4245;
+        break;
+      case 1: // -25%
+        msgKey = 'gamble.result_25_loss';
+        resultAmount = Math.floor(amount * 0.25);
+        delta = -resultAmount;
+        color = 0xED4245;
+        break;
+      case 2: // +50%
+        msgKey = 'gamble.result_50_gain';
+        resultAmount = Math.floor(amount * 0.50);
+        delta = resultAmount;
+        color = 0x57F287;
+        break;
+      case 3: // +100%
+        msgKey = 'gamble.result_100_gain';
+        resultAmount = amount;
+        delta = resultAmount;
+        color = 0x57F287;
+        break;
+    }
+
+    // 残高チェックと増減を1つのクエリで原子的に行う(BigInt対応)。
+    // 「確認→引き落とし」を別々に行うと、同時に複数回実行された場合に
+    // 所持金以上を賭けられてしまう競合状態が発生する。
+    const update = await prisma.userActivity.updateMany({
+      where: { guildId, userId, coins: { gte: BigInt(amount) } },
+      data: { coins: { increment: BigInt(delta) } },
+    });
+
+    if (update.count === 0) {
+      const msg = await tGuild(guildId, 'gamble.insufficient_funds');
       const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
       return interaction.reply({ embeds: [embed], ephemeral: true });
     }
 
-    await removeCoins(interaction.guild.id, interaction.user.id, amount);
-
-    const result = Math.floor(Math.random() * 4);
-    let msgKey, resultAmount, color;
-
-    switch (result) {
-      case 0:
-        msgKey = 'gamble.result_75_loss';
-        resultAmount = Math.floor(amount * 0.75);
-        await removeCoins(interaction.guild.id, interaction.user.id, resultAmount);
-        color = 0xED4245;
-        break;
-      case 1:
-        msgKey = 'gamble.result_25_loss';
-        resultAmount = Math.floor(amount * 0.25);
-        await addCoins(interaction.guild.id, interaction.user.id, amount - resultAmount);
-        color = 0xED4245;
-        break;
-      case 2:
-        msgKey = 'gamble.result_50_gain';
-        resultAmount = Math.floor(amount * 0.50);
-        await addCoins(interaction.guild.id, interaction.user.id, amount + resultAmount);
-        color = 0x57F287;
-        break;
-      case 3:
-        msgKey = 'gamble.result_100_gain';
-        resultAmount = amount;
-        await addCoins(interaction.guild.id, interaction.user.id, amount * 2);
-        color = 0x57F287;
-        break;
-    }
-
-    const msg = await tGuild(interaction.guild.id, msgKey, { amount: resultAmount });
+    const msg = await tGuild(guildId, msgKey, { amount: resultAmount });
     const embed = new EmbedBuilder()
       .setColor(color)
       .setDescription(msg)

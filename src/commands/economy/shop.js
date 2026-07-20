@@ -1,7 +1,7 @@
 // src/commands/economy/shop.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { prisma } = require('../../lib/database');
-const { getCoins, removeCoins, addCoins } = require('../../lib/levelService');
+const { addCoins } = require('../../lib/levelService');
 const { tGuild } = require('../../lib/i18n');
 
 module.exports = {
@@ -110,8 +110,15 @@ module.exports = {
       // 在庫を引いた後、商品情報を取得
       const listing = await prisma.privateShopListing.findUnique({ where: { id } });
 
-      const buyerCoins = await getCoins(interaction.guild.id, interaction.user.id);
-      if (buyerCoins < listing.price) {
+      // 残高チェックと減算を1つの原子的クエリで行う。
+      // (「確認→減算」が別処理だと、同時に複数回購入した場合、
+      //  2件目以降が残高不足でも0円で購入できてしまう抜け道があった)
+      const paymentResult = await prisma.userActivity.updateMany({
+        where: { guildId: interaction.guild.id, userId: interaction.user.id, coins: { gte: BigInt(listing.price) } },
+        data: { coins: { decrement: BigInt(listing.price) } },
+      });
+
+      if (paymentResult.count === 0) {
         // 残高不足の場合、在庫を戻す
         await prisma.privateShopListing.update({ where: { id }, data: { quantity: { increment: 1 } } });
         const msg = await tGuild(interaction.guild.id, 'shop.insufficient_funds');
@@ -119,8 +126,7 @@ module.exports = {
         return interaction.editReply({ embeds: [embed]});
       }
 
-      // 購入処理
-      await removeCoins(interaction.guild.id, interaction.user.id, listing.price);
+      // 購入処理(代金は既に上で原子的に引き落とし済み)
       await addCoins(interaction.guild.id, listing.sellerId, listing.price);
 
       // 在庫0になったら非アクティブ化

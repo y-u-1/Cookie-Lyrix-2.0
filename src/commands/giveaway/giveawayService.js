@@ -1,7 +1,7 @@
 // src/commands/giveaway/giveawayService.js
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { prisma } = require('../../lib/database');
-const { tGuild } = require('../../lib/i18n');
+const { t, tGuild } = require('../../lib/i18n');
 const logger = require('../../lib/logger');
 
 const DEFAULT_COLOR = 0x5865F2;

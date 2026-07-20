@@ -41,7 +41,7 @@ module.exports = {
 
     let boardStr = '';
     for (let i = 0; i < size; i++) {
-      boardStr += grid.slice(i * size, (i + 1) * size).join('') + '\n';
+      boardStr += grid.slice(i * size, (i + 1) * size).join(' ') + '\n';
     }
 
     const embed = new EmbedBuilder()

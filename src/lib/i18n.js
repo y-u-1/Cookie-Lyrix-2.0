@@ -231,6 +231,18 @@ const messages = {
     // Games
     'games.minesweeper_title': 'マインスイーパー',
     'games.minesweeper_desc': '以下のグリッドをクリックして遊んでください。（実態はテキスト表示）',
+    'games.janken_win': '### 結果\nあなた: {player} / Bot: {bot}\n**あなたの勝ちです！**',
+    'games.janken_lose': '### 結果\nあなた: {player} / Bot: {bot}\n**あなたの負けです。**',
+    'games.janken_draw': '### 結果\nあなた: {player} / Bot: {bot}\n**あいこです。**',
+    'games.janken_rock': 'グー',
+    'games.janken_scissors': 'チョキ',
+    'games.janken_paper': 'パー',
+    'games.dice_title': '### 🎲 サイコロ\n{user}は{sides}面ダイスを振って **{result}** が出ました！',
+    'games.slot_title': 'スロット',
+    'games.slot_insufficient_funds': '### エラー\n所持コインが足りません。',
+    'games.slot_jackpot': '### 🎰 大当たり！\n{symbols}\n掛け金の**{multiplier}倍**、**{amount}コイン**を獲得しました！',
+    'games.slot_win': '### 🎰 当たり！\n{symbols}\n掛け金の**{multiplier}倍**、**{amount}コイン**を獲得しました！',
+    'games.slot_lose': '### 🎰 はずれ\n{symbols}\n**{amount}コイン**を失いました。',
 
     // Redeem Code
     'code.generated': '### ギフトコード生成\nコード: `{code}`\n報酬: {coins} コイン',
@@ -565,6 +577,18 @@ const messages = {
     // Games
     'games.minesweeper_title': 'Minesweeper',
     'games.minesweeper_desc': 'Click the grid below to play. (Actually displayed as text)',
+    'games.janken_win': '### Result\nYou: {player} / Bot: {bot}\n**You win!**',
+    'games.janken_lose': '### Result\nYou: {player} / Bot: {bot}\n**You lose.**',
+    'games.janken_draw': '### Result\nYou: {player} / Bot: {bot}\n**Draw.**',
+    'games.janken_rock': 'Rock',
+    'games.janken_scissors': 'Scissors',
+    'games.janken_paper': 'Paper',
+    'games.dice_title': '### 🎲 Dice\n{user} rolled a {sides}-sided die and got **{result}**!',
+    'games.slot_title': 'Slots',
+    'games.slot_insufficient_funds': '### Error\nYou do not have enough coins.',
+    'games.slot_jackpot': '### 🎰 JACKPOT!\n{symbols}\nYou won **{multiplier}x** your bet: **{amount} coins**!',
+    'games.slot_win': '### 🎰 Win!\n{symbols}\nYou won **{multiplier}x** your bet: **{amount} coins**!',
+    'games.slot_lose': '### 🎰 No Match\n{symbols}\nYou lost **{amount} coins**.',
 
     // Redeem Code
     'code.generated': '### Gift Code Generated\nCode: `{code}`\nReward: {coins} coins',

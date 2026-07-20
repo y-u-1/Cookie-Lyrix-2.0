@@ -68,25 +68,28 @@ async function addCoins(guildId, userId, amount) {
 }
 
 async function removeCoins(guildId, userId, amount) {
-  const activity = await prisma.userActivity.findUnique({ where: { guildId_userId: { guildId, userId } } });
-  if (!activity) return 0n;
-  
-  const currentCoins = activity.coins;
   const removeAmount = BigInt(amount);
-  
-  if (currentCoins < removeAmount) {
-    await prisma.userActivity.update({
-      where: { id: activity.id },
-      data: { coins: 0n }
-    });
-    return 0n;
+
+  // 残高が足りる場合は、確認と減算を1つの原子的クエリで行う。
+  // (以前は「読み取り→判定→更新」の3段階に分かれており、
+  //  同時に複数回呼び出すと残高以上に引き落とせてしまう競合状態があった)
+  const sufficientUpdate = await prisma.userActivity.updateMany({
+    where: { guildId, userId, coins: { gte: removeAmount } },
+    data: { coins: { decrement: removeAmount } },
+  });
+
+  if (sufficientUpdate.count > 0) {
+    const activity = await prisma.userActivity.findUnique({ where: { guildId_userId: { guildId, userId } } });
+    return activity ? activity.coins : 0n;
   }
 
-  const updated = await prisma.userActivity.update({
-    where: { id: activity.id },
-    data: { coins: { decrement: removeAmount } }
+  // 残高不足の場合は0にクランプする(元の挙動を維持)。
+  const activity = await prisma.userActivity.upsert({
+    where: { guildId_userId: { guildId, userId } },
+    update: { coins: 0n },
+    create: { guildId, userId, coins: 0n },
   });
-  return updated.coins;
+  return activity.coins;
 }
 
 async function getCoins(guildId, userId) {
