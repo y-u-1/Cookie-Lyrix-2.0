@@ -3,6 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 const { getTopAffinity } = require('../../lib/levelService');
+const { joinLinesSafely } = require('../../lib/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -86,14 +87,14 @@ module.exports = {
       const topUsersName = await tGuild(interaction.guild.id, 'affinity.top_pairs');
       const noData = await tGuild(interaction.guild.id, 'affinity.no_data');
       
-      const affinities = await getTopAffinity(interaction.guild.id, 30);
+      const affinities = await getTopAffinity(interaction.guild.id, 10);
       const lines = affinities.map((a, i) => `**${i + 1}.** <@${a.userId}> と <@${a.targetId}> - **${a.points} ポイント**`);
 
       const embed = new EmbedBuilder()
         .setColor(0xEB459E)
         .setTitle(title)
         .setDescription(desc)
-        .addFields({ name: topUsersName, value: lines.length ? lines.join('\n') : noData })
+        .addFields({ name: topUsersName, value: joinLinesSafely(lines) ?? noData })
         .setFooter({ text: await tGuild(interaction.guild.id, 'level.last_updated') })
         .setTimestamp();
 

@@ -3,9 +3,11 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('
 const { prisma } = require('../../lib/database');
 const { getTopUsers, getTopUsersByCoins, getTopAffinity } = require('../../lib/levelService');
 const { tGuild } = require('../../lib/i18n');
+const { joinLinesSafely } = require('../../lib/embedUtils');
 const logger = require('../../lib/logger');
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
+const PAGE_SIZE = 10; // 1024文字制限に収まるよう、1ページあたりの表示件数を抑える(各ページ送りボタンの件数と合わせる)
 
 async function updatePanel(client, panel) {
   const channel = await client.channels.fetch(panel.channelId).catch(() => null);
@@ -23,7 +25,7 @@ async function updatePanel(client, panel) {
     desc = await tGuild(panel.guildId, 'economy.coin_panel_desc');
     fieldName = await tGuild(panel.guildId, 'level.top_users');
     const coinsName = await tGuild(panel.guildId, 'economy.coin_name');
-    const topUsers = await getTopUsersByCoins(panel.guildId, 30);
+    const topUsers = await getTopUsersByCoins(panel.guildId, PAGE_SIZE);
     lines = topUsers.map((u, i) => `**${i + 1}.** <@${u.userId}> - **${Number(u.coins)} ${coinsName}**`);
     color = 0xFEE75C;
     pagePrefix = 'coin';
@@ -32,7 +34,7 @@ async function updatePanel(client, panel) {
     desc = await tGuild(panel.guildId, 'affinity.panel_desc');
     fieldName = await tGuild(panel.guildId, 'affinity.top_pairs');
     const pointsName = await tGuild(panel.guildId, 'affinity.points_name');
-    const topAffinities = await getTopAffinity(panel.guildId, 30);
+    const topAffinities = await getTopAffinity(panel.guildId, PAGE_SIZE);
     lines = topAffinities.map((a, i) => `**${i + 1}.** <@${a.userId}> & <@${a.targetId}> - **${a.points} ${pointsName}**`);
     color = 0xEB459E;
     pagePrefix = 'affinity';
@@ -41,7 +43,7 @@ async function updatePanel(client, panel) {
     desc = await tGuild(panel.guildId, 'level.panel_desc');
     fieldName = await tGuild(panel.guildId, 'level.top_users');
     const xpName = await tGuild(panel.guildId, 'level.xp_name');
-    const topUsers = await getTopUsers(panel.guildId, 30);
+    const topUsers = await getTopUsers(panel.guildId, PAGE_SIZE);
     lines = topUsers.map((u, i) => `**${i + 1}.** <@${u.userId}> - **LV. ${u.level}** (${Number(u.xp)} ${xpName})`);
     color = 0x5865F2;
     pagePrefix = 'level';
@@ -51,7 +53,7 @@ async function updatePanel(client, panel) {
     .setColor(color)
     .setTitle(title)
     .setDescription(desc)
-    .addFields({ name: fieldName, value: lines.length ? lines.join('\n') : noData })
+    .addFields({ name: fieldName, value: joinLinesSafely(lines) ?? noData })
     .setFooter({ text: lastUpdated })
     .setTimestamp();
 

@@ -4,6 +4,7 @@ const { prisma } = require('../../lib/database');
 const { getRank, getTopUsers } = require('../../lib/levelService');
 const { renderRankCard } = require('../../lib/canvasRenderer');
 const { tGuild } = require('../../lib/i18n');
+const { joinLinesSafely } = require('../../lib/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -46,7 +47,7 @@ module.exports = {
       const topUsersName = await tGuild(interaction.guild.id, 'level.top_users');
       const noData = await tGuild(interaction.guild.id, 'level.no_data');
       
-      const topUsers = await getTopUsers(interaction.guild.id, 30);
+      const topUsers = await getTopUsers(interaction.guild.id, 10);
       const lines = topUsers.map((u, i) => {
         return `**${i + 1}.** <@${u.userId}> - **LV. ${u.level}** (${u.xp} XP)`;
       });
@@ -55,7 +56,7 @@ module.exports = {
         .setColor(0x5865F2)
         .setTitle(title)
         .setDescription(desc)
-        .addFields({ name: topUsersName, value: lines.length ? lines.join('\n') : noData })
+        .addFields({ name: topUsersName, value: joinLinesSafely(lines) ?? noData })
         .setFooter({ text: await tGuild(interaction.guild.id, 'level.last_updated') })
         .setTimestamp();
 

@@ -54,18 +54,19 @@ function startEarthquakeScheduler(client) {
         const epicenterText = await tGuild(guild.guildId, 'earthquake.epicenter');
 
         const time = new Date(latest.earthquake.time).toLocaleString('ja-JP');
+        const mapCredit = await tGuild(guild.guildId, 'earthquake.map_credit');
 
         const embed = new EmbedBuilder()
           .setColor(0xED4245)
           .setTitle(`${title} - ${scaleText} ${getScaleText(latest.earthquake.maxScale)}`)
           .setImage('attachment://earthquake.png')
           .addFields(
-            { name: epicenterText, value: latest.earthquake.hypocenter.name, inline: true },
-            { name: magText, value: latest.earthquake.hypocenter.magnitude, inline: true },
-            { name: depthText, value: latest.earthquake.hypocenter.depth, inline: true },
+            { name: epicenterText, value: `${latest.earthquake.hypocenter.name}`, inline: true },
+            { name: magText, value: `${latest.earthquake.hypocenter.magnitude}`, inline: true },
+            { name: depthText, value: `${latest.earthquake.hypocenter.depth}`, inline: true },
             { name: timeText, value: time, inline: true }
           )
-          .setFooter({ text: '地図データ: 国土地理院 地球地図日本' })
+          .setFooter({ text: mapCredit })
           .setTimestamp();
 
         await channel.send({ embeds: [embed], files: [attachment] }).catch(() => {});
