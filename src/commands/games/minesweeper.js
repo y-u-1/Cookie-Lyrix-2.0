@@ -1,55 +1,61 @@
 // src/commands/games/minesweeper.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { tGuild } = require('../../lib/i18n');
+const { DIFFICULTIES, createGame, buildBoardComponents, buildGameEmbed, registerGame } = require('./minesweeperService');
+const { getCoins } = require('../../lib/levelService');
+const { tGuild, getGuildLanguage } = require('../../lib/i18n');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('minesweeper')
-    .setDescription('マインスイーパーを遊びます / Play Minesweeper'),
+    .setDescription('マインスイーパーで遊びます / Play a game of Minesweeper')
+    .addSubcommand((sub) =>
+      sub
+        .setName('start')
+        .setDescription('新しいゲームを開始します / Start a new Minesweeper game')
+        .addStringOption((opt) =>
+          opt
+            .setName('difficulty')
+            .setDescription('難易度 / Difficulty')
+            .addChoices(
+              { name: DIFFICULTIES.easy.label, value: 'easy' },
+              { name: DIFFICULTIES.medium.label, value: 'medium' },
+              { name: DIFFICULTIES.hard.label, value: 'hard' },
+            )
+            .setRequired(true),
+        )
+        .addIntegerOption((opt) =>
+          opt.setName('bet').setDescription('掛け金(勝利:+50%、敗北:-10%) / Coins to bet (win: +50%, lose: -10%)').setMinValue(1).setRequired(false),
+        ),
+    ),
   category: 'ゲーム / Games',
   async execute(interaction) {
-    const title = await tGuild(interaction.guild.id, 'games.minesweeper_title');
-    
-    const grid = [];
-    const bombs = 5;
-    const size = 5;
-    const positions = new Set();
-    
-    while (positions.size < bombs) {
-      positions.add(Math.floor(Math.random() * (size * size)));
-    }
-
-    for (let i = 0; i < size * size; i++) {
-      if (positions.has(i)) {
-        grid.push('||💥||');
-      } else {
-        let count = 0;
-        const row = Math.floor(i / size);
-        const col = i % size;
-        
-        for (let r = -1; r <= 1; r++) {
-          for (let c = -1; c <= 1; c++) {
-            const nr = row + r;
-            const nc = col + c;
-            if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
-              if (positions.has(nr * size + nc)) count++;
-            }
-          }
-        }
-        grid.push(`||${count}||`);
-      }
-    }
-
-    let boardStr = '';
-    for (let i = 0; i < size; i++) {
-      boardStr += grid.slice(i * size, (i + 1) * size).join(' ') + '\n';
-    }
-
-    const embed = new EmbedBuilder()
-      .setColor(0x5865F2)
-      .setTitle(title)
-      .setDescription(boardStr);
-
-    await interaction.reply({ embeds: [embed] });
+    const sub = interaction.options.getSubcommand();
+    if (sub === 'start') return handleStart(interaction);
   },
 };
+
+async function handleStart(interaction) {
+  const difficulty = interaction.options.getString('difficulty');
+  const bet = interaction.options.getInteger('bet') ?? 0;
+
+  if (bet > 0) {
+    const balance = await getCoins(interaction.guildId, interaction.user.id);
+    if (balance < BigInt(bet)) {
+      const msg = await tGuild(interaction.guildId, 'gamble.insufficient_funds');
+      return interaction.reply({
+        embeds: [new EmbedBuilder().setColor(0xb89cff).setDescription(msg)],
+        ephemeral: true,
+      });
+    }
+  }
+
+  const preset = DIFFICULTIES[difficulty];
+  const state = createGame(preset.rows, preset.cols, preset.mines, bet);
+
+  const lang = await getGuildLanguage(interaction.guildId);
+  const embed = buildGameEmbed(state, interaction.user.id, 0, lang);
+  const rows = buildBoardComponents(state);
+
+  const message = await interaction.reply({ embeds: [embed], components: rows }).then(() => interaction.fetchReply());
+  registerGame(message.id, state, interaction.user.id);
+}

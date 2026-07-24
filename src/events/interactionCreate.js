@@ -8,6 +8,7 @@ const { route: pollRoute } = require('../commands/general/pollInteractions');
 const { route: levelRoute } = require('../commands/level/levelInteractions');
 const { route: economyRoute } = require('../commands/economy/economyInteractions');
 const { route: affinityRoute } = require('../commands/general/affinityInteractions');
+const { route: minesweeperRoute } = require('../commands/games/minesweeperInteractions');
 const { handleOpenModal: redeemOpenModal, handleSubmit: redeemSubmit } = require('../commands/economy/redeem');
 const { permissionKeyFor, hasPermission } = require('../lib/permissions');
 const { tGuild } = require('../lib/i18n');
@@ -45,6 +46,7 @@ module.exports = {
         else if (interaction.customId.startsWith('level_page_')) await levelRoute(interaction);
         else if (interaction.customId.startsWith('coin_page_')) await economyRoute(interaction);
         else if (interaction.customId.startsWith('affinity_page_')) await affinityRoute(interaction);
+        else if (interaction.customId.startsWith('mine_')) await minesweeperRoute(interaction);
         else if (interaction.customId === 'redeem_open_modal') await redeemOpenModal(interaction);
         else if (interaction.customId === 'redeem_submit') await redeemSubmit(interaction);
         else if (interaction.customId === 'role_panel_modal') await roleRoute(interaction);
