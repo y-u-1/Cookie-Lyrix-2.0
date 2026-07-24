@@ -51,20 +51,26 @@ async function generateUniqueShortId() {
   throw new Error('Failed to generate unique shortId');
 }
 
+// 修正: 終了時パネルのフォーマットを変更し、両言語化
 function buildGiveawayEmbed(giveaway, { ended = false, winnerIds = [] } = {}, lang = 'ja') {
   const unix = Math.floor(new Date(giveaway.endsAt).getTime() / 1000);
 
   if (ended) {
-    const winnerText = winnerIds.length ? winnerIds.map((id) => `<@${id}>`).join(', ') : t(lang, 'giveaway.ended_no_winners');
-    const lines = [
-      `### ${t(lang, 'giveaway.ended_title')}`,
-      `**Prize:** ${giveaway.prize}`,
-      `**Winners:** ${winnerText}`,
-      `**Hosted by:** <@${giveaway.hostId}>`,
-      `**Reroll Command:** \`/giveaway reroll id:${giveaway.shortId}\``,
-      `\n> Ended: <t:${unix}:R>`
-    ];
-    const embed = new EmbedBuilder().setColor(giveaway.endColor ?? DEFAULT_END_COLOR).setDescription(lines.join('\n'));
+    let desc;
+    if (winnerIds.length) {
+      const mentions = winnerIds.map((id) => `<@${id}>`).join(', ');
+      const rerollCmd = `/giveaway reroll id:${giveaway.shortId}`;
+      desc = `${mentions} won the giveaway of ${giveaway.prize}!\n  • Reroll Command: ${rerollCmd}`;
+    } else {
+      desc = t(lang, 'giveaway.ended_no_winners');
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(giveaway.endColor ?? DEFAULT_END_COLOR)
+      .setTitle(t(lang, 'giveaway.ended_title'))
+      .setDescription(`### ${giveaway.prize}\n${desc}`)
+      .setTimestamp();
+      
     if (giveaway.imageUrl) embed.setImage(giveaway.imageUrl);
     if (giveaway.thumbnailUrl) embed.setThumbnail(giveaway.thumbnailUrl);
     return embed;
@@ -183,6 +189,7 @@ async function rerollGiveaway(client, giveawayId) {
   return { ok: true, winnerIds };
 }
 
+// 修正: announceResultでの余計なパネル送信を削除し、buildGiveawayEmbedに統一
 async function announceResult(client, giveaway, winnerIds, { isReroll }) {
   const settings = await prisma.guildSettings.findUnique({ where: { guildId: giveaway.guildId } });
   const lang = settings?.language || 'ja';
@@ -220,27 +227,9 @@ async function announceResult(client, giveaway, winnerIds, { isReroll }) {
       }
     }
 
-    // 当選者発表用パネルの送信
+    // 当選者にメンションを送信
     const mentions = winnerIds.map((id) => `<@${id}>`).join(', ');
-    const title = isReroll ? t(lang, 'giveaway.rerolled_title') : t(lang, 'giveaway.ended_title');
-    const desc = isReroll 
-      ? t(lang, 'giveaway.rerolled_winners', { winners: mentions })
-      : t(lang, 'giveaway.ended_winners', { winners: mentions });
-      
-    const winnerEmbed = new EmbedBuilder()
-      .setColor(giveaway.endColor ?? DEFAULT_END_COLOR)
-      .setTitle(`### ${title}`)
-      .setDescription(`**${giveaway.prize}**\n${desc}`)
-      .setTimestamp();
-
-    await channel.send({ content: mentions, embeds: [winnerEmbed] }).catch(() => {});
-  } else if (!isReroll) {
-    const winnerEmbed = new EmbedBuilder()
-      .setColor(DEFAULT_END_COLOR)
-      .setTitle(`### ${t(lang, 'giveaway.ended_title')}`)
-      .setDescription(`**${giveaway.prize}**\n${t(lang, 'giveaway.ended_no_winners')}`)
-      .setTimestamp();
-    await channel.send({ embeds: [winnerEmbed] }).catch(() => {});
+    await channel.send({ content: `Congratulations ${mentions}! You won **${giveaway.prize}**!` }).catch(() => {});
   }
 }
 
@@ -319,7 +308,6 @@ module.exports = {
   checkEntryRate, checkAccountAge
 };
 
-// 不足している関数を追加
 async function deleteGiveaway(client, giveawayId) {
   const giveaway = await prisma.giveaway.findUnique({ where: { id: giveawayId } });
   if (!giveaway) return { error: 'not_found' };

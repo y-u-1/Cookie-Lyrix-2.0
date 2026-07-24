@@ -1,33 +1,31 @@
 // src/commands/giveaway/giveawayInteractions.js
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { prisma } = require('../../lib/database');
-const { tGuild } = require('../../lib/i18n');
+const { t, tGuild, getGuildLanguage } = require('../../lib/i18n');
 const { buildActionRow, buildParticipantsPage, entryCount, checkEntryRate, checkAccountAge } = require('./giveawayService');
 
 const DEFAULT_COLOR = 0x5865F2;
 const ERROR_COLOR = 0xED4245;
 
 async function handleEnter(interaction) {
-  // 最初に必ずACKする。この後DBへの複数回の問い合わせや
-  // Discordメッセージの編集が続くため、先に応答しないと
-  // 3秒のインタラクション期限を超えて失敗することがあった。
   await interaction.deferReply({ ephemeral: true });
+  const lang = await getGuildLanguage(interaction.guildId);
 
   const giveaway = await prisma.giveaway.findUnique({ where: { messageId: interaction.message.id } });
   if (!giveaway || giveaway.status !== 'ACTIVE' || giveaway.endsAt <= new Date()) {
-    const msg = await tGuild(giveaway?.guildId || interaction.guildId, 'giveaway.enter.ended');
+    const msg = t(lang, 'giveaway.enter.ended');
     return interaction.editReply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)] });
   }
 
   const rateCheck = checkEntryRate(interaction.user.id);
   if (!rateCheck.allowed) {
-    const msg = await tGuild(interaction.guildId, 'giveaway.enter.rate_limit');
+    const msg = t(lang, 'giveaway.enter.rate_limit');
     return interaction.editReply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)] });
   }
 
   const ageCheck = await checkAccountAge(interaction.user, giveaway.guildId);
   if (!ageCheck.allowed) {
-    const msg = await tGuild(interaction.guildId, 'giveaway.enter.account_too_new', { min_age: ageCheck.minAgeDays, account_age: ageCheck.accountAgeDays });
+    const msg = t(lang, 'giveaway.enter.account_too_new', { min_age: ageCheck.minAgeDays, account_age: ageCheck.accountAgeDays });
     return interaction.editReply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)] });
   }
 
@@ -37,21 +35,18 @@ async function handleEnter(interaction) {
   if (giveaway.requiredRoleId && !hasBypass) {
     const hasRequired = member?.roles?.cache?.has(giveaway.requiredRoleId);
     if (!hasRequired) {
-      const msg = await tGuild(interaction.guildId, 'giveaway.enter.missing_role', { role: `<@&${giveaway.requiredRoleId}>` });
+      const msg = t(lang, 'giveaway.enter.missing_role', { role: `<@&${giveaway.requiredRoleId}>` });
       return interaction.editReply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)] });
     }
   }
-
-  // TODO: レベリング機能実装後にレベル制限をチェックする
-  // if (giveaway.requiredLevel && !hasBypass) { ... }
 
   const existing = await prisma.giveawayEntry.findUnique({
     where: { giveawayId_userId: { giveawayId: giveaway.id, userId: interaction.user.id } },
   });
   
   if (existing) {
-    const leaveButtonLabel = await tGuild(interaction.guildId, 'giveaway.leave.button');
-    const message = await tGuild(interaction.guildId, 'giveaway.enter.already_entered_with_leave');
+    const leaveButtonLabel = t(lang, 'giveaway.leave.button');
+    const message = t(lang, 'giveaway.enter.already_entered_with_leave');
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId(`giveaway_leave:${giveaway.id}`).setLabel(leaveButtonLabel).setStyle(ButtonStyle.Danger)
     );
@@ -60,16 +55,16 @@ async function handleEnter(interaction) {
 
   await prisma.giveawayEntry.create({ data: { giveawayId: giveaway.id, userId: interaction.user.id } });
   const count = await entryCount(giveaway.id);
-  const row = buildActionRow({ count });
+  const row = buildActionRow({ count }, lang);
   await interaction.message.edit({ components: [row] }).catch(() => {});
 
-  const msg = await tGuild(interaction.guildId, 'giveaway.enter.confirmed', { prize: giveaway.prize });
+  const msg = t(lang, 'giveaway.enter.confirmed', { prize: giveaway.prize });
   return interaction.editReply({ embeds: [new EmbedBuilder().setColor(DEFAULT_COLOR).setDescription(msg)] });
 }
 
 async function handleLeave(interaction) {
-  // 最初に必ずACKする(以降DBへの複数回の問い合わせとメッセージ編集が続くため)。
   await interaction.deferUpdate();
+  const lang = await getGuildLanguage(interaction.guildId);
 
   const [, giveawayId] = interaction.customId.split(':');
   const giveaway = await prisma.giveaway.findUnique({ where: { id: giveawayId } });
@@ -87,7 +82,7 @@ async function handleLeave(interaction) {
 
   await prisma.giveawayEntry.delete({ where: { id: existing.id } });
   const count = await entryCount(giveaway.id);
-  const row = buildActionRow({ count });
+  const row = buildActionRow({ count }, lang);
   
   const channel = interaction.client.channels.cache.get(giveaway.channelId);
   if (channel) {
@@ -95,7 +90,7 @@ async function handleLeave(interaction) {
     if (message) await message.edit({ components: [row] }).catch(() => {});
   }
 
-  const msg = await tGuild(interaction.guildId, 'giveaway.leave.success');
+  const msg = t(lang, 'giveaway.leave.success');
   return interaction.editReply({
     content: null,
     embeds: [new EmbedBuilder().setColor(DEFAULT_COLOR).setDescription(msg)],
@@ -104,20 +99,20 @@ async function handleLeave(interaction) {
 }
 
 async function handleParticipantsOpen(interaction) {
-  // 先にACKする(この後複数回のDB問い合わせが続くため)。
   await interaction.deferReply({ ephemeral: true });
+  const lang = await getGuildLanguage(interaction.guildId);
 
   const giveaway = await prisma.giveaway.findUnique({ where: { messageId: interaction.message.id } });
   if (!giveaway) return interaction.editReply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('Giveaway not found.')] });
   if (interaction.user.id !== giveaway.hostId) return interaction.editReply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('Only the host can view participants.')] });
 
-  const { embed, row } = await buildParticipantsPage(giveaway.id, 0);
+  const { embed, row } = await buildParticipantsPage(giveaway.id, 0, lang);
   return interaction.editReply({ embeds: [embed], components: [row] });
 }
 
 async function handleParticipantsPage(interaction) {
-  // 先にACKする(deferUpdateはボタンを押した見た目のまま裏で処理を続けられる)。
   await interaction.deferUpdate();
+  const lang = await getGuildLanguage(interaction.guildId);
 
   const [, giveawayId, pageStr] = interaction.customId.split(':');
   const giveaway = await prisma.giveaway.findUnique({ where: { id: giveawayId } });
@@ -125,7 +120,7 @@ async function handleParticipantsPage(interaction) {
     return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('Only the host can view participants.')], ephemeral: true }).catch(() => {});
   }
 
-  const { embed, row } = await buildParticipantsPage(giveawayId, parseInt(pageStr, 10) || 0);
+  const { embed, row } = await buildParticipantsPage(giveawayId, parseInt(pageStr, 10) || 0, lang);
   return interaction.editReply({ embeds: [embed], components: [row] }).catch(() => {});
 }
 
