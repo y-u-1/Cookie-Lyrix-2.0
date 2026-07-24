@@ -51,7 +51,6 @@ async function generateUniqueShortId() {
   throw new Error('Failed to generate unique shortId');
 }
 
-// 修正: 元のパネル（参加ボタンがあるメッセージ）のフォーマット
 function buildGiveawayEmbed(giveaway, { ended = false, winnerIds = [] } = {}, lang = 'ja') {
   const unix = Math.floor(new Date(giveaway.endsAt).getTime() / 1000);
 
@@ -182,7 +181,6 @@ async function rerollGiveaway(client, giveawayId) {
   return { ok: true, winnerIds };
 }
 
-// 修正: 新しいパネルのフォーマットとコードブロックの適用
 async function announceResult(client, giveaway, winnerIds, { isReroll }) {
   const settings = await prisma.guildSettings.findUnique({ where: { guildId: giveaway.guildId } });
   const lang = settings?.language || 'ja';
@@ -222,7 +220,7 @@ async function announceResult(client, giveaway, winnerIds, { isReroll }) {
       }
     }
 
-    // 3. 新しい当選者発表パネルを送信
+    // 3. 新しい当選者発表パネルを送信 (パネルの外のメンションは削除)
     const mentions = winnerIds.map((id) => `<@${id}>`).join(', ');
     const rerollCmd = `/giveaway reroll id:${giveaway.shortId}`;
     const winnerDesc = `${mentions} won the giveaway of **${giveaway.prize}**!\n• Reroll Command:\n\`\`\`\n${rerollCmd}\n\`\`\``;
@@ -233,7 +231,7 @@ async function announceResult(client, giveaway, winnerIds, { isReroll }) {
       .setDescription(winnerDesc)
       .setTimestamp();
 
-    await channel.send({ content: mentions, embeds: [winnerEmbed] }).catch(() => {});
+    await channel.send({ embeds: [winnerEmbed] }).catch(() => {});
   }
 }
 
