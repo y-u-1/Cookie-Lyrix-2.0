@@ -60,9 +60,8 @@ function buildGiveawayEmbed(giveaway, { ended = false, winnerIds = [] } = {}, la
     const lines = [
       `### ${giveaway.prize}`,
       `Winner: ${winnerText}`,
-      `**Hosted by:** <@${giveaway.hostId}>`,
-      `**Reroll Command:** \`/giveaway reroll id:${giveaway.shortId}\``,
-      `\n> Ended: <t:${unix}:R>`
+      ``,
+      `> Ended: <t:${unix}:R>`
     ];
     const embed = new EmbedBuilder().setColor(giveaway.endColor ?? DEFAULT_END_COLOR).setDescription(lines.join('\n'));
     if (giveaway.imageUrl) embed.setImage(giveaway.imageUrl);
@@ -183,7 +182,7 @@ async function rerollGiveaway(client, giveawayId) {
   return { ok: true, winnerIds };
 }
 
-// 修正: announceResultで、元のパネルを更新した後に、新しいパネルを送信する
+// 修正: 新しいパネルのフォーマットとコードブロックの適用
 async function announceResult(client, giveaway, winnerIds, { isReroll }) {
   const settings = await prisma.guildSettings.findUnique({ where: { guildId: giveaway.guildId } });
   const lang = settings?.language || 'ja';
@@ -226,7 +225,7 @@ async function announceResult(client, giveaway, winnerIds, { isReroll }) {
     // 3. 新しい当選者発表パネルを送信
     const mentions = winnerIds.map((id) => `<@${id}>`).join(', ');
     const rerollCmd = `/giveaway reroll id:${giveaway.shortId}`;
-    const winnerDesc = `${mentions} won the giveaway of **${giveaway.prize}**!\n  • Reroll Command: ${rerollCmd}`;
+    const winnerDesc = `${mentions} won the giveaway of **${giveaway.prize}**!\n• Reroll Command:\n\`\`\`\n${rerollCmd}\n\`\`\``;
     
     const winnerEmbed = new EmbedBuilder()
       .setColor(giveaway.endColor ?? DEFAULT_END_COLOR)
