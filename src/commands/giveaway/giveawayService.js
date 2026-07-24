@@ -51,26 +51,20 @@ async function generateUniqueShortId() {
   throw new Error('Failed to generate unique shortId');
 }
 
-// 修正: 終了時パネルのフォーマットを変更し、両言語化
+// 修正: 元のパネル（参加ボタンがあるメッセージ）のフォーマット
 function buildGiveawayEmbed(giveaway, { ended = false, winnerIds = [] } = {}, lang = 'ja') {
   const unix = Math.floor(new Date(giveaway.endsAt).getTime() / 1000);
 
   if (ended) {
-    let desc;
-    if (winnerIds.length) {
-      const mentions = winnerIds.map((id) => `<@${id}>`).join(', ');
-      const rerollCmd = `/giveaway reroll id:${giveaway.shortId}`;
-      desc = `${mentions} won the giveaway of ${giveaway.prize}!\n  • Reroll Command: ${rerollCmd}`;
-    } else {
-      desc = t(lang, 'giveaway.ended_no_winners');
-    }
-
-    const embed = new EmbedBuilder()
-      .setColor(giveaway.endColor ?? DEFAULT_END_COLOR)
-      .setTitle(t(lang, 'giveaway.ended_title'))
-      .setDescription(`### ${giveaway.prize}\n${desc}`)
-      .setTimestamp();
-      
+    const winnerText = winnerIds.length ? winnerIds.map((id) => `<@${id}>`).join(', ') : t(lang, 'giveaway.ended_no_winners');
+    const lines = [
+      `### ${giveaway.prize}`,
+      `Winner: ${winnerText}`,
+      `**Hosted by:** <@${giveaway.hostId}>`,
+      `**Reroll Command:** \`/giveaway reroll id:${giveaway.shortId}\``,
+      `\n> Ended: <t:${unix}:R>`
+    ];
+    const embed = new EmbedBuilder().setColor(giveaway.endColor ?? DEFAULT_END_COLOR).setDescription(lines.join('\n'));
     if (giveaway.imageUrl) embed.setImage(giveaway.imageUrl);
     if (giveaway.thumbnailUrl) embed.setThumbnail(giveaway.thumbnailUrl);
     return embed;
@@ -189,23 +183,25 @@ async function rerollGiveaway(client, giveawayId) {
   return { ok: true, winnerIds };
 }
 
-// 修正: announceResultでの余計なパネル送信を削除し、buildGiveawayEmbedに統一
+// 修正: announceResultで、元のパネルを更新した後に、新しいパネルを送信する
 async function announceResult(client, giveaway, winnerIds, { isReroll }) {
   const settings = await prisma.guildSettings.findUnique({ where: { guildId: giveaway.guildId } });
   const lang = settings?.language || 'ja';
   
-  const embed = buildGiveawayEmbed(giveaway, { ended: true, winnerIds }, lang);
+  // 1. 元のパネル（参加ボタンがあるメッセージ）を終了状態に更新
+  const originalEmbed = buildGiveawayEmbed(giveaway, { ended: true, winnerIds }, lang);
   const count = await entryCount(giveaway.id);
-  const row = buildActionRow({ enterDisabled: true, count }, lang);
+  const disabledRow = buildActionRow({ enterDisabled: true, count }, lang);
 
   const channel = await client.channels.fetch(giveaway.channelId).catch(() => null);
   if (!channel) return;
 
   if (giveaway.messageId) {
     const message = await channel.messages.fetch(giveaway.messageId).catch(() => null);
-    if (message) await message.edit({ embeds: [embed], components: [row] }).catch(() => {});
+    if (message) await message.edit({ embeds: [originalEmbed], components: [disabledRow] }).catch(() => {});
   }
 
+  // 2. 当選者へのロール付与、コイン付与、DM送信
   if (winnerIds.length) {
     if (giveaway.winnersRoleId && channel.guild) {
       for (const userId of winnerIds) {
@@ -227,9 +223,18 @@ async function announceResult(client, giveaway, winnerIds, { isReroll }) {
       }
     }
 
-    // 当選者にメンションを送信
+    // 3. 新しい当選者発表パネルを送信
     const mentions = winnerIds.map((id) => `<@${id}>`).join(', ');
-    await channel.send({ content: `Congratulations ${mentions}! You won **${giveaway.prize}**!` }).catch(() => {});
+    const rerollCmd = `/giveaway reroll id:${giveaway.shortId}`;
+    const winnerDesc = `${mentions} won the giveaway of **${giveaway.prize}**!\n  • Reroll Command: ${rerollCmd}`;
+    
+    const winnerEmbed = new EmbedBuilder()
+      .setColor(giveaway.endColor ?? DEFAULT_END_COLOR)
+      .setTitle(t(lang, isReroll ? 'giveaway.rerolled_title' : 'giveaway.ended_title'))
+      .setDescription(winnerDesc)
+      .setTimestamp();
+
+    await channel.send({ content: mentions, embeds: [winnerEmbed] }).catch(() => {});
   }
 }
 
