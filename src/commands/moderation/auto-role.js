@@ -19,6 +19,7 @@ module.exports = {
         .setName('disable')
         .setDescription('自動ロールを無効化 / Disable auto role')
     ),
+  category: 'モデレーション / Moderation',
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 

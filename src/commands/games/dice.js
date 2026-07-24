@@ -9,6 +9,7 @@ module.exports = {
     .addIntegerOption((opt) =>
       opt.setName('sides').setDescription('面の数(デフォルト6) / Number of sides (default 6)').setMinValue(2).setMaxValue(100).setRequired(false)
     ),
+  category: 'ゲーム / Games',
   async execute(interaction) {
     const sides = interaction.options.getInteger('sides') ?? 6;
     const result = Math.floor(Math.random() * sides) + 1;

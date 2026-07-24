@@ -96,6 +96,7 @@ function buildGiveawayCommand({ name, description }) {
 
   return {
     data: builder,
+    category: 'ギブアウェイ / Giveaway',
     async execute(interaction) {
       // start(パネル投稿)・end(当選発表)など、Discord APIへの実通信やDB書き込みを
       // 伴うサブコマンドが複数あるため、先頭で一律deferしてから各処理に振り分ける。

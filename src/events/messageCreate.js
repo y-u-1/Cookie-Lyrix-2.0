@@ -123,10 +123,11 @@ module.exports = {
       
       const title = await t(lang, 'level.levelup_title');
       const desc = await t(lang, 'level.levelup_desc', { level: result.newLevel });
+      const bonusLine = await t(lang, 'level.levelup_bonus', { coins: levelUpBonus });
       const embed = new EmbedBuilder()
         .setColor(0x57F287)
         .setTitle(title)
-        .setDescription(`${desc}\n> ${await t(lang, 'level.levelup_bonus')}: **${levelUpBonus} ${await t(lang, 'economy.coin_name')}**`)
+        .setDescription(`${desc}\n${bonusLine}`)
         .setThumbnail(message.author.displayAvatarURL());
       
       message.channel.send({ embeds: [embed] }).catch(() => {});

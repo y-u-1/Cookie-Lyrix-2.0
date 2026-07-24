@@ -158,6 +158,7 @@ const messages = {
     'level.panel_desc': '5分ごとに自動更新されます。\n現在のサーバー上位30名のランキングです。',
     'level.levelup_title': 'レベルアップ！',
     'level.levelup_desc': 'おめでとうございます！ **{level}** レベルに到達しました！',
+    'level.levelup_bonus': '> レベルアップボーナス: **{coins} コイン**',
     'level.no_xp': '### エラー\nまだXPを獲得していません。',
     'level.top_users': '上位30名',
     'level.no_data': 'データなし',
@@ -193,6 +194,7 @@ const messages = {
     'earthquake.epicenter': '震源地',
     'earthquake.points': '各地の震度',
     'earthquake.test_notice': '### これはテスト送信です\n実際の地震情報ではありません。マップの見た目を確認するためのサンプルです。',
+    'earthquake.map_credit': '地図データ: 国土地理院 地球地図日本',
 
     // Economy
     'economy.daily_success': '### デイリーボーナス受け取り\n2,500コインを受け取りました！\n現在の所持コイン: **{coins}**',
@@ -213,6 +215,7 @@ const messages = {
     'gamble.result_25_loss': '### ギャンブル結果 (小敗)\n{amount} コイン失いました (-25%)',
     'gamble.result_50_gain': '### ギャンブル結果 (小勝)\n{amount} コイン獲得しました (+50%)',
     'gamble.result_100_gain': '### ギャンブル結果 (大勝)\n{amount} コイン獲得しました (+100%)',
+    'gamble.bet_footer': '掛け金: {amount} コイン',
 
     // Shop
     'shop.listed': '### 出品完了\n**{name}** を {price} コインで出品しました。',
@@ -507,6 +510,7 @@ const messages = {
     'level.panel_desc': 'Updates automatically every 5 minutes.\nTop 30 users in this server.',
     'level.levelup_title': 'Level Up!',
     'level.levelup_desc': 'Congratulations! You have reached level **{level}**!',
+    'level.levelup_bonus': '> Level Up Bonus: **{coins} coins**',
     'level.no_xp': '### Error\nYou have not earned any XP yet.',
     'level.top_users': 'Top 30',
     'level.no_data': 'No data',
@@ -542,6 +546,7 @@ const messages = {
     'earthquake.epicenter': 'Epicenter',
     'earthquake.points': 'Points by Scale',
     'earthquake.test_notice': '### This is a test\nThis is not a real earthquake. It is a sample used to preview the map appearance.',
+    'earthquake.map_credit': 'Map data: GSI Japan / Global Map Japan',
 
     // Economy
     'economy.daily_success': '### Daily Bonus Claimed\nYou received 2,500 coins!\nCurrent coins: **{coins}**',
@@ -562,6 +567,7 @@ const messages = {
     'gamble.result_25_loss': '### Gamble Result (Minor Loss)\nYou lost {amount} coins (-25%)',
     'gamble.result_50_gain': '### Gamble Result (Minor Win)\nYou won {amount} coins (+50%)',
     'gamble.result_100_gain': '### Gamble Result (Major Win)\nYou won {amount} coins (+100%)',
+    'gamble.bet_footer': 'Bet: {amount} coins',
 
     // Shop
     'shop.listed': '### Item Listed\nListed **{name}** for {price} coins.',

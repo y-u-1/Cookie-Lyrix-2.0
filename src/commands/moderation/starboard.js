@@ -22,6 +22,7 @@ module.exports = {
         .setName('disable')
         .setDescription('スターボードを無効化 / Disable starboard')
     ),
+  category: 'モデレーション / Moderation',
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 

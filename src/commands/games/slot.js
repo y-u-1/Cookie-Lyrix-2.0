@@ -30,6 +30,7 @@ module.exports = {
     .addIntegerOption((opt) =>
       opt.setName('amount').setDescription('掛け金 / Bet amount').setMinValue(100).setMaxValue(1000000).setRequired(true)
     ),
+  category: 'ゲーム / Games',
   async execute(interaction) {
     const guildId = interaction.guild.id;
     const userId = interaction.user.id;
@@ -73,10 +74,11 @@ module.exports = {
     });
 
     const color = multiplier === 0 ? 0xED4245 : multiplier >= 20 ? 0xFEE75C : 0x57F287;
+    const footerText = await tGuild(guildId, 'gamble.bet_footer', { amount });
     const embed = new EmbedBuilder()
       .setColor(color)
       .setDescription(msg)
-      .setFooter({ text: `掛け金: ${amount} コイン` });
+      .setFooter({ text: footerText });
 
     await interaction.reply({ embeds: [embed] });
   },

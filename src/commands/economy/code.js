@@ -54,6 +54,7 @@ module.exports = {
         .setDescription('コードを削除 / Delete a code')
         .addStringOption((opt) => opt.setName('code').setDescription('削除するコード / Code to delete').setRequired(true))
     ),
+  category: 'エコノミー / Economy',
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 

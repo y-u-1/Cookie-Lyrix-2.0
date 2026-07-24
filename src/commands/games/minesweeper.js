@@ -6,6 +6,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('minesweeper')
     .setDescription('マインスイーパーを遊びます / Play Minesweeper'),
+  category: 'ゲーム / Games',
   async execute(interaction) {
     const title = await tGuild(interaction.guild.id, 'games.minesweeper_title');
     

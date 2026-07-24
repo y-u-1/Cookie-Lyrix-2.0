@@ -31,6 +31,7 @@ module.exports = {
         .setName('panel')
         .setDescription('5分ごとに更新される親密度ランキングを設置 / Setup an affinity leaderboard panel')
     ),
+  category: '一般 / General',
   async execute(interaction) {
     // panelサブコマンドがchannel.send + DB書き込みの後に応答していたため、
     // 先頭で一律deferしてから各処理を行う。

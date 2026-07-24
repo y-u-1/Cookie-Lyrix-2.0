@@ -10,6 +10,7 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addStringOption((opt) => opt.setName('title').setDescription('パネルのタイトル / Panel title').setRequired(true))
     .addChannelOption((opt) => opt.setName('channel').setDescription('パネルを設置するチャンネル / Channel').addChannelTypes(ChannelType.GuildText).setRequired(false)),
+  category: 'モデレーション / Moderation',
   async execute(interaction) {
     // チャンネルへのメッセージ投稿・DB書き込みの後に応答していたため、
     // 3秒のインタラクション期限に間に合わないことがあった。先にdeferする。

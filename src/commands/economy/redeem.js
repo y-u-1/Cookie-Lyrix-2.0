@@ -9,6 +9,7 @@ module.exports = {
     .setName('redeem')
     .setDescription('ギフトコードを交換します / Redeem a gift code')
     .addStringOption((opt) => opt.setName('code').setDescription('ギフトコード / Gift code').setRequired(true)),
+  category: 'エコノミー / Economy',
   async execute(interaction) {
     const codeInput = interaction.options.getString('code');
     await processRedeem(interaction, codeInput);

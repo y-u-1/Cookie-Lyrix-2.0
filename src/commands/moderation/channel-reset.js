@@ -9,6 +9,7 @@ module.exports = {
     .setName('channel-reset')
     .setDescription('このチャンネルを初期化（クローン作成後、元チャンネルを削除）します / Reset this channel')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  category: 'モデレーション / Moderation',
   async execute(interaction) {
     if (!interaction.appPermissions.has(PermissionFlagsBits.ManageChannels)) {
       const msg = await tGuild(interaction.guild.id, 'channelreset.error_perms');

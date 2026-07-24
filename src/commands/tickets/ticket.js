@@ -22,6 +22,7 @@ module.exports = {
           opt.setName('staff_role').setDescription('チケットに対応するスタッフロール / Staff role').setRequired(false)
         )
     ),
+  category: 'チケット / Tickets',
   async execute(interaction) {
     if (interaction.options.getSubcommand() === 'setup') {
       // チャンネルへのメッセージ投稿・DB書き込みの後に応答していたため、

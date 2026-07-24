@@ -2,8 +2,15 @@
 const { SlashCommandBuilder, ChannelType, EmbedBuilder, AttachmentBuilder, PermissionFlagsBits } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
-const { renderEarthquakeMap } = require('../../lib/canvasRenderer');
+const { buildIntensityMapImage } = require('../../lib/earthquakeMap');
 const { getScaleText } = require('../../lib/earthquakeService');
+
+const SCALE_CHOICES = [
+  { name: '震度1以上 / Scale 1+', value: 10 },
+  { name: '震度3以上 / Scale 3+', value: 30 },
+  { name: '震度5弱以上 / Scale 5-lower+', value: 45 },
+  { name: '震度7のみ / Scale 7 only', value: 70 },
+];
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,7 +25,7 @@ module.exports = {
           opt.setName('channel').setDescription('送信先チャンネル / Channel').addChannelTypes(ChannelType.GuildText).setRequired(true)
         )
         .addIntegerOption((opt) =>
-          opt.setName('min_scale').setDescription('通知する最小震度 / Minimum scale').setMinValue(1).setMaxValue(7).setRequired(false)
+          opt.setName('min_scale').setDescription('通知する最小震度 / Minimum scale').addChoices(...SCALE_CHOICES).setRequired(false)
         )
     )
     .addSubcommand((sub) =>
@@ -31,12 +38,13 @@ module.exports = {
         .setName('test')
         .setDescription('サンプルの地震マップを送信して見た目を確認します / Send a sample earthquake map to preview it')
     ),
+  category: 'モデレーション / Moderation',
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 
     if (sub === 'setup') {
       const channel = interaction.options.getChannel('channel');
-      const minScale = interaction.options.getInteger('min_scale') ?? 4;
+      const minScale = interaction.options.getInteger('min_scale') ?? 40;
 
       await prisma.guildSettings.upsert({
         where: { guildId: interaction.guild.id },
@@ -44,7 +52,7 @@ module.exports = {
         create: { guildId: interaction.guild.id, earthquakeChannelId: channel.id, earthquakeMinScale: minScale },
       });
 
-      const msg = await tGuild(interaction.guild.id, 'earthquake.setup_success', { channel: channel.toString(), min_scale: minScale });
+      const msg = await tGuild(interaction.guild.id, 'earthquake.setup_success', { channel: channel.toString(), min_scale: getScaleText(minScale) });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
       await interaction.reply({ embeds: [embed], ephemeral: true });
 
@@ -78,7 +86,7 @@ module.exports = {
         ],
       };
 
-      const imageBuffer = await renderEarthquakeMap(sample);
+      const imageBuffer = buildIntensityMapImage({ points: sample.points, epicenter: sample.earthquake.hypocenter });
       const attachment = new AttachmentBuilder(imageBuffer, { name: 'earthquake-test.png' });
 
       const title = await tGuild(interaction.guild.id, 'earthquake.title');
@@ -89,6 +97,7 @@ module.exports = {
       const epicenterText = await tGuild(interaction.guild.id, 'earthquake.epicenter');
       const testNotice = await tGuild(interaction.guild.id, 'earthquake.test_notice');
 
+      const mapCredit = await tGuild(interaction.guild.id, 'earthquake.map_credit');
       const embed = new EmbedBuilder()
         .setColor(0xED4245)
         .setTitle(`${title} - ${scaleText} ${getScaleText(sample.earthquake.maxScale)}`)
@@ -100,7 +109,7 @@ module.exports = {
           { name: depthText, value: `${sample.earthquake.hypocenter.depth}`, inline: true },
           { name: timeText, value: new Date(sample.earthquake.time).toLocaleString('ja-JP'), inline: true }
         )
-        .setFooter({ text: '地図データ: 国土地理院 地球地図日本' })
+        .setFooter({ text: mapCredit })
         .setTimestamp();
 
       await interaction.editReply({ embeds: [embed], files: [attachment] });

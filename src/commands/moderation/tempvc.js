@@ -24,6 +24,7 @@ module.exports = {
         .setName('disable')
         .setDescription('一時VC機能を無効化 / Disable Temp VC')
     ),
+category: 'モデレーション / Moderation',
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 

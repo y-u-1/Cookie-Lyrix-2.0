@@ -12,6 +12,7 @@ module.exports = {
     .addChannelOption((opt) => opt.setName('channel').setDescription('パネルを設置するチャンネル / Channel').addChannelTypes(ChannelType.GuildText).setRequired(false))
     .addStringOption((opt) => opt.setName('block_guild_ids').setDescription('ブロックするサーバーID (カンマ区切り) / Block guild IDs (comma separated)').setRequired(false))
     .addIntegerOption((opt) => opt.setName('min_account_age').setDescription('アカウント作成からの必要日数 / Min account age (days)').setMinValue(0).setRequired(false)),
+  category: 'モデレーション / Moderation',
   async execute(interaction) {
     // チャンネルへのメッセージ投稿・DB書き込みの後に応答していたため、
     // 3秒のインタラクション期限に間に合わないことがあった。先にdeferする。

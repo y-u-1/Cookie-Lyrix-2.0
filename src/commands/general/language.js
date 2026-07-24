@@ -18,6 +18,7 @@ module.exports = {
           { name: 'English', value: 'en' }
         )
     ),
+  category: '一般 / General',
   async execute(interaction) {
     const lang = interaction.options.getString('language');
     

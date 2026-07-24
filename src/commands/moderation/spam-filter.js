@@ -17,6 +17,7 @@ module.exports = {
         .addIntegerOption((opt) => 
           opt.setName('window_sec').setDescription('何秒以内か / Window in seconds').setMinValue(1).setMaxValue(60).setRequired(true))
     ),
+  category: 'モデレーション / Moderation',
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
     

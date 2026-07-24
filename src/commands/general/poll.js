@@ -19,6 +19,7 @@ module.exports = {
         .addStringOption((opt) => opt.setName('option4').setDescription('選択肢4 / Option 4').setRequired(false))
         .addStringOption((opt) => opt.setName('option5').setDescription('選択肢5 / Option 5').setRequired(false))
     ),
+  category: '一般 / General',
   async execute(interaction) {
     if (interaction.options.getSubcommand() === 'create') {
       const question = interaction.options.getString('question');

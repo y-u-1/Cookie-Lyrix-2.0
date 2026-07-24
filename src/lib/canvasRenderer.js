@@ -1,13 +1,12 @@
 // src/lib/canvasRenderer.js
 const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
-const fs = require('fs');
-const path = require('path');
-const { getScaleColor, getScaleText } = require('./earthquakeService');
 
 // フォントの登録
 try {
   const fontPath = require.resolve('@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-400-normal.woff2');
-  GlobalFonts.registerFromPath(fontPath, 'Noto Sans JP');
+  if (!GlobalFonts.has('Noto Sans JP')) {
+    GlobalFonts.registerFromPath(fontPath, 'Noto Sans JP');
+  }
 } catch (e) {
   console.error('Font registration failed:', e);
 }
@@ -99,150 +98,4 @@ async function renderRankCard(user, rankData) {
   return canvas.toBuffer('image/png');
 }
 
-async function renderEarthquakeMap(earthquake) {
-  const width = 800;
-  const height = 600;
-  const canvas = createCanvas(width, height);
-  const ctx = canvas.getContext('2d');
-
-  // 背景
-  ctx.fillStyle = '#1E1E2E';
-  ctx.fillRect(0, 0, width, height);
-
-  // タイトル
-  ctx.font = 'bold 28px "Noto Sans JP"';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.textAlign = 'left';
-  ctx.fillText(`${earthquake.earthquake.hypocenter.name} (最大震度 ${getScaleText(earthquake.earthquake.maxScale)})`, 20, 40);
-
-  // --- 都道府県ごとの震度マップ (GeoJSON) ---
-  const mapX = 40, mapY = 60, mapW = 720, mapH = 360;
-
-  // 日本全体を収めるおおよその緯度経度の範囲(沖合の震源も入るよう少し余裕を持たせる)
-  const LON_MIN = 120, LON_MAX = 150;
-  const LAT_MIN = 23, LAT_MAX = 47;
-
-  function project(lon, lat) {
-    const x = mapX + ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * mapW;
-    const y = mapY + (1 - (lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * mapH;
-    return [x, y];
-  }
-
-  // 観測点(points)から、都道府県ごとの最大震度を集計する
-  const scaleByPref = {};
-  for (const p of (earthquake.points || [])) {
-    const current = scaleByPref[p.pref];
-    if (current === undefined || p.scale > current) {
-      scaleByPref[p.pref] = p.scale;
-    }
-  }
-
-  const prefectures = getPrefectureGeoJson();
-  for (const feature of prefectures.features) {
-    const prefName = feature.properties.nam_ja;
-    const scale = scaleByPref[prefName];
-
-    const polygons = feature.geometry.type === 'Polygon'
-      ? [feature.geometry.coordinates]
-      : feature.geometry.coordinates;
-
-    ctx.beginPath();
-    for (const polygon of polygons) {
-      for (const ring of polygon) {
-        ring.forEach(([lon, lat], i) => {
-          const [x, y] = project(lon, lat);
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        ctx.closePath();
-      }
-    }
-
-    // 観測情報がある都道府県は震度に応じた色、ないところはニュートラルなグレー
-    ctx.fillStyle = scale !== undefined ? getScaleColor(scale) : '#3A3A4A';
-    ctx.fill();
-    ctx.strokeStyle = '#1E1E2E';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-
-  // 震源(エピセンター)を星印でプロット
-  const { latitude, longitude } = earthquake.earthquake.hypocenter;
-  if (typeof latitude === 'number' && typeof longitude === 'number') {
-    const [ex, ey] = project(longitude, latitude);
-    drawStar(ctx, ex, ey, 5, 12, 5, '#FFFFFF', '#000000');
-  }
-
-  // 枠線
-  ctx.strokeStyle = '#45475A';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(mapX, mapY, mapW, mapH);
-
-  // --- 凡例 ---
-  const legendScales = [10, 20, 30, 40, 45, 50, 55, 60, 70];
-  const legendY = mapY + mapH + 20;
-  const legendItemW = mapW / legendScales.length;
-  ctx.font = '14px "Noto Sans JP"';
-  legendScales.forEach((scale, i) => {
-    const lx = mapX + i * legendItemW;
-    ctx.fillStyle = getScaleColor(scale);
-    ctx.fillRect(lx, legendY, legendItemW - 4, 16);
-    ctx.fillStyle = '#DCDDDE';
-    ctx.textAlign = 'center';
-    ctx.fillText(getScaleText(scale), lx + (legendItemW - 4) / 2, legendY + 30);
-  });
-
-  // 情報テキスト
-  ctx.font = '20px "Noto Sans JP"';
-  ctx.fillStyle = '#DCDDDE';
-  ctx.textAlign = 'left';
-  const time = new Date(earthquake.earthquake.time).toLocaleString('ja-JP');
-  ctx.fillText(`発生時刻: ${time}`, 20, height - 60);
-  ctx.fillText(`深さ: ${earthquake.earthquake.hypocenter.depth}`, 20, height - 32);
-  ctx.fillText(`マグニチュード: ${earthquake.earthquake.hypocenter.magnitude}`, 300, height - 32);
-
-  return canvas.toBuffer('image/png');
-}
-
-// 都道府県境界のGeoJSONを一度だけ読み込みキャッシュする。
-// データ出典: 地球地図日本 (国土地理院 / dataofjapan/land, https://github.com/dataofjapan/land)
-// を簡略化・軽量化したもの。非営利利用時は出典の明記が必要(埋め込みのフッターに表記済み)。
-let _prefectureGeoJsonCache = null;
-function getPrefectureGeoJson() {
-  if (!_prefectureGeoJsonCache) {
-    const filePath = path.join(__dirname, 'data', 'japan-prefectures.geojson');
-    _prefectureGeoJsonCache = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  }
-  return _prefectureGeoJsonCache;
-}
-
-// 震源を示す星形マーカーを描画する
-function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius, fillColor, strokeColor) {
-  let rot = (Math.PI / 2) * 3;
-  let x = cx, y = cy;
-  const step = Math.PI / spikes;
-
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - outerRadius);
-  for (let i = 0; i < spikes; i++) {
-    x = cx + Math.cos(rot) * outerRadius;
-    y = cy + Math.sin(rot) * outerRadius;
-    ctx.lineTo(x, y);
-    rot += step;
-
-    x = cx + Math.cos(rot) * innerRadius;
-    y = cy + Math.sin(rot) * innerRadius;
-    ctx.lineTo(x, y);
-    rot += step;
-  }
-  ctx.lineTo(cx, cy - outerRadius);
-  ctx.closePath();
-
-  ctx.fillStyle = fillColor;
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = strokeColor;
-  ctx.stroke();
-}
-
-module.exports = { renderRankCard, renderEarthquakeMap };
+module.exports = { renderRankCard };

@@ -21,6 +21,7 @@ module.exports = {
         .setName('panel')
         .setDescription('5分ごとに更新されるリーダーボードを設置 / Setup a leaderboard panel')
     ),
+  category: 'レベル / Level',
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 

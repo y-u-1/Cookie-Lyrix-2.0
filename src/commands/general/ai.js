@@ -24,6 +24,7 @@ module.exports = {
             )
         )
     ),
+  category: '一般 / General',
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 

@@ -7,6 +7,7 @@ module.exports = {
     .setName('redeem-panel')
     .setDescription('ギフトコード引き換えパネルを設置します / Setup a redeem panel')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+  category: 'エコノミー / Economy',
   async execute(interaction) {
     await interaction.deferReply();
 

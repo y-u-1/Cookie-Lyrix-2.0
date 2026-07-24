@@ -30,6 +30,7 @@ module.exports = {
         .setDescription('アイテムを購入 / Buy an item')
         .addStringOption((opt) => opt.setName('id').setDescription('商品ID / Item ID').setRequired(true))
     ),
+  category: 'エコノミー / Economy',
   async execute(interaction) {
     // buyサブコマンドがロール付与(Discord API)やDB操作を複数回行った後に
     // 応答していたため、先頭で一律deferしてから各処理を行う。

@@ -6,12 +6,13 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('help')
     .setDescription('Botのコマンド一覧を表示します / Show command list'),
+  category: '一般 / General',
   async execute(interaction) {
     const commands = interaction.client.commands;
     
     const categories = new Map();
     for (const command of commands.values()) {
-      const category = command.category || 'Other';
+      const category = command.category || 'その他 / Other';
       if (!categories.has(category)) {
         categories.set(category, []);
       }
@@ -28,7 +29,9 @@ module.exports = {
       .setTimestamp();
 
     for (const [category, cmds] of categories) {
-      embed.addFields({ name: category, value: cmds.join(' | '), inline: false });
+      let value = cmds.join(' | ');
+      if (value.length > 1020) value = value.slice(0, 1020) + '…';
+      embed.addFields({ name: category, value, inline: false });
     }
 
     embed.setFooter({ text: 'Cookie Lyrix 2.0' });

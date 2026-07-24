@@ -20,6 +20,7 @@ module.exports = {
         .setName('disable')
         .setDescription('荒らし対策を無効化 / Disable antiraid')
     ),
+  category: 'モデレーション / Moderation',
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 

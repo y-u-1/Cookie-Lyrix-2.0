@@ -34,6 +34,7 @@ module.exports = {
         .addSubcommand((sub) => sub.setName('channel').setDescription('チャンネルログ / Channel log'))
         .addSubcommand((sub) => sub.setName('redeem').setDescription('Redeemログ / Redeem log')) // 追加
     ),
+  category: 'モデレーション / Moderation',
   async execute(interaction) {
     const group = interaction.options.getSubcommandGroup();
     const sub = interaction.options.getSubcommand();

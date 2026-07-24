@@ -24,6 +24,7 @@ module.exports = {
           opt.setName('channel').setDescription('送信先チャンネル / Channel').addChannelTypes(ChannelType.GuildText).setRequired(true)
         )
     ),
+  category: 'モデレーション / Moderation',
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
     const channel = interaction.options.getChannel('channel');

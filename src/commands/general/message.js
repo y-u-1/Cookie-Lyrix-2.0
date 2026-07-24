@@ -10,6 +10,7 @@ module.exports = {
     .addStringOption((opt) => opt.setName('title').setDescription('タイトル / Title').setRequired(true))
     .addStringOption((opt) => opt.setName('description').setDescription('説明 / Description').setRequired(false))
     .addStringOption((opt) => opt.setName('color').setDescription('Hexカラー / Hex color').setRequired(false)),
+  category: '一般 / General',
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
 

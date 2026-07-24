@@ -30,6 +30,7 @@ module.exports = {
         .addUserOption((opt) => opt.setName('user').setDescription('対象ユーザー / User').setRequired(true))
         .addStringOption((opt) => opt.setName('reason').setDescription('理由 / Reason').setRequired(false))
     ),
+  category: 'モデレーション / Moderation',
   async execute(interaction) {
     // DM送信・kick/ban実行・DB書き込みなど時間のかかる処理が続くため、先にACKする。
     await interaction.deferReply({ ephemeral: true });

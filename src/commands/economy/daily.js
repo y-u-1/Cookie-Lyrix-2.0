@@ -7,6 +7,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('daily')
     .setDescription('デイリーボーナスを受け取ります / Claim your daily bonus'),
+  category: 'エコノミー / Economy',
   async execute(interaction) {
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);

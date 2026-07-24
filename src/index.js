@@ -8,7 +8,7 @@ const { loadEvents } = require('./handlers/eventHandler');
 const { startKeepAlive } = require('./lib/keepAlive');
 const { startGiveawayScheduler } = require('./commands/giveaway/giveawayScheduler');
 const { startLevelScheduler } = require('./commands/level/levelScheduler');
-const { startEarthquakeScheduler } = require('./commands/moderation/earthquakeScheduler');
+const { startEarthquakeWatcher } = require('./commands/moderation/earthquakeWatcher');
 const { startTicketScheduler } = require('./commands/tickets/ticketScheduler');
 const logger = require('./lib/logger');
 
@@ -69,7 +69,7 @@ startKeepAlive('Cookie Lyrix 2.0');
 client.once('ready', () => {
   startGiveawayScheduler(client);
   startLevelScheduler(client);
-  startEarthquakeScheduler(client);
+  startEarthquakeWatcher(client);
   startTicketScheduler(client);
 });
 

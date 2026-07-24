@@ -25,6 +25,7 @@ module.exports = {
         .setName('list')
         .setDescription('NGワードの一覧を表示 / List NG words')
     ),
+  category: 'モデレーション / Moderation',
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 

@@ -39,6 +39,7 @@ module.exports = {
         .setName('panel')
         .setDescription('5分ごとに更新されるコインランキングを設置 / Setup a coin leaderboard panel')
     ),
+  category: 'エコノミー / Economy',
   async execute(interaction) {
     // panelサブコマンドがchannel.send + DB書き込みの後に応答していたため、
     // 先頭で一律deferしてから各処理を行う。

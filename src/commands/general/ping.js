@@ -7,6 +7,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Botの応答速度を確認します / Check bot latency'),
+  category: '一般 / General',
   async execute(interaction) {
     const guildSettings = await prisma.guildSettings.findUnique({
       where: { guildId: interaction.guild.id }

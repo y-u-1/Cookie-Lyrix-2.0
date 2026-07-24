@@ -1,6 +1,7 @@
 // src/events/messageUpdate.js
 const { EmbedBuilder } = require('discord.js');
 const { prisma } = require('../lib/database');
+const { tGuild } = require('../lib/i18n');
 
 module.exports = {
   name: 'messageUpdate',
@@ -21,10 +22,11 @@ module.exports = {
     const channel = oldMessage.guild.channels.cache.get(logChannelSetting.channelId);
     if (!channel) return;
 
+    const title = await tGuild(oldMessage.guild.id, 'log.title_message_edit');
     const embed = new EmbedBuilder()
       .setColor(0xFEE75C)
       .setAuthor({ name: oldMessage.author.tag, iconURL: oldMessage.author.displayAvatarURL() })
-      .setTitle('メッセージ編集')
+      .setTitle(title)
       .addFields(
         { name: 'Channel', value: `<#${oldMessage.channel.id}>`, inline: false },
         { name: 'Before', value: oldMessage.content || '*No content*', inline: false },

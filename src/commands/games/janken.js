@@ -21,6 +21,7 @@ module.exports = {
           { name: 'パー / Paper', value: 'paper' }
         )
     ),
+  category: 'ゲーム / Games',
   async execute(interaction) {
     const guildId = interaction.guild.id;
     const playerChoice = interaction.options.getString('choice');
