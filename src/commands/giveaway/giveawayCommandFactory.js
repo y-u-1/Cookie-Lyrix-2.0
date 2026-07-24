@@ -1,5 +1,5 @@
 // src/commands/giveaway/giveawayCommandFactory.js
-const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 const {
@@ -98,8 +98,6 @@ function buildGiveawayCommand({ name, description }) {
     data: builder,
     category: 'ギブアウェイ / Giveaway',
     async execute(interaction) {
-      // start(パネル投稿)・end(当選発表)など、Discord APIへの実通信やDB書き込みを
-      // 伴うサブコマンドが複数あるため、先頭で一律deferしてから各処理に振り分ける。
       await interaction.deferReply({ ephemeral: true });
 
       const group = interaction.options.getSubcommandGroup();
@@ -124,9 +122,11 @@ async function findGiveaway(interaction) {
   return prisma.giveaway.findFirst({ where: { guildId: interaction.guildId, shortId } });
 }
 
-async function replyMsg(interaction, msgKey, params = {}) {
+// 修正: すべての応答をEmbed化
+async function replyMsg(interaction, msgKey, params = {}, color = 0x57F287) {
   const msg = await tGuild(interaction.guildId, msgKey, params);
-  return interaction.editReply({ content: msg });
+  const embed = new EmbedBuilder().setColor(color).setDescription(msg);
+  return interaction.editReply({ embeds: [embed] });
 }
 
 async function handleStart(interaction) {
@@ -148,9 +148,9 @@ async function handleStart(interaction) {
   const coinPrize = interaction.options.getInteger('coin_prize');
 
   const durationMs = parseDuration(durationInput);
-  if (!durationMs) return replyMsg(interaction, 'giveaway.start.invalid_duration');
+  if (!durationMs) return replyMsg(interaction, 'giveaway.start.invalid_duration', {}, 0xED4245);
   if ((colorInput && parseHexColor(colorInput) === null) || (endColorInput && parseHexColor(endColorInput) === null)) {
-    return replyMsg(interaction, 'giveaway.start.invalid_color');
+    return replyMsg(interaction, 'giveaway.start.invalid_color', {}, 0xED4245);
   }
 
   const imageUrl = imageAttachment && imageAttachment.contentType?.startsWith('image/') ? imageAttachment.url : null;
@@ -169,33 +169,32 @@ async function handleStart(interaction) {
 
 async function handleEnd(interaction) {
   const giveaway = await findGiveaway(interaction);
-  if (!giveaway) return replyMsg(interaction, 'giveaway.end.not_found');
-  if (giveaway.status !== 'ACTIVE') return replyMsg(interaction, 'giveaway.end.already_ended');
+  if (!giveaway) return replyMsg(interaction, 'giveaway.end.not_found', {}, 0xED4245);
+  if (giveaway.status !== 'ACTIVE') return replyMsg(interaction, 'giveaway.end.already_ended', {}, 0xED4245);
   await endGiveaway(interaction.client, giveaway.id);
   return replyMsg(interaction, 'giveaway.end.success');
 }
 
 async function handleReroll(interaction) {
   const giveaway = await findGiveaway(interaction);
-  if (!giveaway) return replyMsg(interaction, 'giveaway.reroll.not_found');
-  if (giveaway.status !== 'ENDED') return replyMsg(interaction, 'giveaway.reroll.not_ended');
+  if (!giveaway) return replyMsg(interaction, 'giveaway.reroll.not_found', {}, 0xED4245);
+  if (giveaway.status !== 'ENDED') return replyMsg(interaction, 'giveaway.reroll.not_ended', {}, 0xED4245);
   const result = await rerollGiveaway(interaction.client, giveaway.id);
-  if (!result.winnerIds?.length) return replyMsg(interaction, 'giveaway.reroll.no_entries');
+  if (!result.winnerIds?.length) return replyMsg(interaction, 'giveaway.reroll.no_entries', {}, 0xED4245);
   return replyMsg(interaction, 'giveaway.reroll.success');
 }
 
 async function handleDelete(interaction) {
   const giveaway = await findGiveaway(interaction);
-  if (!giveaway) return replyMsg(interaction, 'giveaway.end.not_found');
+  if (!giveaway) return replyMsg(interaction, 'giveaway.end.not_found', {}, 0xED4245);
   await deleteGiveaway(interaction.client, giveaway.id);
-  // 削除はシンプルに固定的なメッセージでも良いが、多言語化するならキーを追加する必要がある。ここでは英語をデフォルトに。
-  return interaction.editReply({ content: '### Giveaway Deleted\nThe giveaway was successfully deleted.' });
+  return interaction.editReply({ embeds: [new EmbedBuilder().setColor(0xED4245).setDescription('### Giveaway Deleted\nThe giveaway was successfully deleted.')] });
 }
 
 async function handleEdit(interaction) {
   const giveaway = await findGiveaway(interaction);
-  if (!giveaway) return replyMsg(interaction, 'giveaway.end.not_found');
-  if (giveaway.status !== 'ACTIVE') return replyMsg(interaction, 'giveaway.end.already_ended');
+  if (!giveaway) return replyMsg(interaction, 'giveaway.end.not_found', {}, 0xED4245);
+  if (giveaway.status !== 'ACTIVE') return replyMsg(interaction, 'giveaway.end.already_ended', {}, 0xED4245);
 
   const prize = interaction.options.getString('prize');
   const durationInput = interaction.options.getString('duration');
@@ -208,7 +207,7 @@ async function handleEdit(interaction) {
   if (requiredLevel != null) data.requiredLevel = requiredLevel === 0 ? null : requiredLevel;
   if (durationInput) {
     const ms = parseDuration(durationInput);
-    if (!ms) return replyMsg(interaction, 'giveaway.start.invalid_duration');
+    if (!ms) return replyMsg(interaction, 'giveaway.start.invalid_duration', {}, 0xED4245);
     data.endsAt = new Date(Date.now() + ms);
   }
 
@@ -221,23 +220,22 @@ async function handleEdit(interaction) {
   const multiplier = interaction.options.getNumber('multiplier');
   if (user && multiplier != null) {
     const result = await setWeight(interaction.guildId, giveaway.shortId, user.id, multiplier);
-    if (result.error === 'not_entered') return replyMsg(interaction, 'giveaway.weight.not_entered', { user: user.toString() });
+    if (result.error === 'not_entered') return replyMsg(interaction, 'giveaway.weight.not_entered', { user: user.toString() }, 0xED4245);
   }
 
-  return interaction.editReply({ content: '### Giveaway Updated\nThe giveaway settings were updated.' });
+  return interaction.editReply({ embeds: [new EmbedBuilder().setColor(0x5865F2).setDescription('### Giveaway Updated\nThe giveaway settings were updated.')] });
 }
 
 async function handleFix(interaction) {
   const giveaway = await findGiveaway(interaction);
-  if (!giveaway) return replyMsg(interaction, 'giveaway.end.not_found');
+  if (!giveaway) return replyMsg(interaction, 'giveaway.end.not_found', {}, 0xED4245);
   const result = await fixGiveaway(interaction.client, giveaway.id);
-  if (result.error) return interaction.editReply({ content: '### Error\nCould not fix the giveaway.' });
-  return interaction.editReply({ content: `### Giveaway Fixed\nAction: \`${result.action}\`` });
+  if (result.error) return interaction.editReply({ embeds: [new EmbedBuilder().setColor(0xED4245).setDescription('### Error\nCould not fix the giveaway.')] });
+  return interaction.editReply({ embeds: [new EmbedBuilder().setColor(0x57F287).setDescription(`### Giveaway Fixed\nAction: \`${result.action}\``)] });
 }
 
 async function handleRoles(interaction) {
-  // Giveaway系は管理者専用のため、ロール委任機能(creator-roles/manager-roles)は無効化している。
-  return replyMsg(interaction, 'giveaway.roles_disabled');
+  return replyMsg(interaction, 'giveaway.roles_disabled', {}, 0xED4245);
 }
 
 async function handleList(interaction) {
@@ -247,7 +245,7 @@ async function handleList(interaction) {
     orderBy: { endsAt: 'asc' },
   });
 
-  if (!giveaways.length) return replyMsg(interaction, 'giveaway.list.empty');
+  if (!giveaways.length) return replyMsg(interaction, 'giveaway.list.empty', {}, 0x5865F2);
 
   const lines = giveaways.map((g) => {
     const unix = Math.floor(new Date(g.endsAt).getTime() / 1000);
@@ -255,7 +253,7 @@ async function handleList(interaction) {
   });
 
   const title = await tGuild(interaction.guildId, 'giveaway.list.title');
-  return interaction.editReply({ content: `${title}\n\n${lines.join('\n')}` });
+  return interaction.editReply({ embeds: [new EmbedBuilder().setColor(0x5865F2).setDescription(`${title}\n\n${lines.join('\n')}`)] });
 }
 
 async function handleTemplate(interaction, action) {
@@ -263,7 +261,7 @@ async function handleTemplate(interaction, action) {
     const name = interaction.options.getString('name');
     const durationInput = interaction.options.getString('duration');
     const durationMs = durationInput ? parseDuration(durationInput) : null;
-    if (durationInput && !durationMs) return replyMsg(interaction, 'giveaway.template.invalid_duration');
+    if (durationInput && !durationMs) return replyMsg(interaction, 'giveaway.template.invalid_duration', {}, 0xED4245);
 
     await saveTemplate(interaction.guildId, name, {
       durationMs,
@@ -284,20 +282,20 @@ async function handleTemplate(interaction, action) {
 
   if (action === 'list') {
     const templates = await listTemplates(interaction.guildId);
-    if (!templates.length) return replyMsg(interaction, 'giveaway.template.no_templates');
+    if (!templates.length) return replyMsg(interaction, 'giveaway.template.no_templates', {}, 0x5865F2);
     const lines = templates.map((t) => {
       const duration = t.durationMs ? `${Math.floor(t.durationMs / 60000)}min` : 'no duration';
       const winners = t.winnerCount ? `${t.winnerCount} winners` : 'no winners';
       return `**${t.name}** - ${winners}, ${duration}`;
     });
     const title = await tGuild(interaction.guildId, 'giveaway.template.list_title');
-    return interaction.editReply({ content: `${title}\n\n${lines.join('\n')}` });
+    return interaction.editReply({ embeds: [new EmbedBuilder().setColor(0x5865F2).setDescription(`${title}\n\n${lines.join('\n')}`)] });
   }
 
   if (action === 'use') {
     const name = interaction.options.getString('name');
     const template = await getTemplate(interaction.guildId, name);
-    if (!template) return replyMsg(interaction, 'giveaway.template.not_found');
+    if (!template) return replyMsg(interaction, 'giveaway.template.not_found', {}, 0xED4245);
 
     const prize = interaction.options.getString('prize');
     const durationInput = interaction.options.getString('duration');
@@ -306,7 +304,7 @@ async function handleTemplate(interaction, action) {
     const host = interaction.options.getUser('host') ?? interaction.user;
 
     const durationMs = durationInput ? parseDuration(durationInput) : template.durationMs;
-    if (!durationMs) return replyMsg(interaction, 'giveaway.template.invalid_duration');
+    if (!durationMs) return replyMsg(interaction, 'giveaway.template.invalid_duration', {}, 0xED4245);
 
     const { giveaway } = await createGiveaway({
       guild: interaction.guild, channel, host, prize, winnerCount: winners, durationMs,
@@ -320,7 +318,7 @@ async function handleTemplate(interaction, action) {
   if (action === 'delete') {
     const name = interaction.options.getString('name');
     const result = await deleteTemplate(interaction.guildId, name);
-    if (result.error) return replyMsg(interaction, 'giveaway.template.not_found');
+    if (result.error) return replyMsg(interaction, 'giveaway.template.not_found', {}, 0xED4245);
     return replyMsg(interaction, 'giveaway.template.deleted', { name });
   }
 }
