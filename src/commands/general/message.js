@@ -1,5 +1,5 @@
 // src/commands/general/message.js
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder } = require('discord.js');
 const { tGuild } = require('../../lib/i18n');
 
 const MAX_ATTACHMENTS = 10;
@@ -56,29 +56,14 @@ module.exports = {
       if (title) embed.setTitle(title);
 
       const files = [];
-      const attachmentNames = [];
-      
       for (let i = 1; i <= MAX_ATTACHMENTS; i++) {
         const attachment = interaction.options.getAttachment(`attachment${i}`);
         if (attachment) {
-          files.push(new AttachmentBuilder(attachment.url, { name: attachment.name }));
-          attachmentNames.push(attachment.name);
+          files.push(attachment);
         }
       }
 
-      // 添付ファイルがある場合は、Embedの下に表示されるようにメッセージを送信
-      if (files.length > 0) {
-        // 本文の末尾に添付ファイルのリンクを追加して、本文の下に画像が表示されるようにする
-        let newContent = content;
-        for (const name of attachmentNames) {
-          newContent += `\nattachment://${name}`;
-        }
-        embed.setDescription(newContent);
-        
-        await channel.send({ embeds: [embed], files });
-      } else {
-        await channel.send({ embeds: [embed] });
-      }
+      await channel.send({ embeds: [embed], files });
 
       const msg = await tGuild(interaction.guild.id, 'message.sent');
       const successEmbed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
