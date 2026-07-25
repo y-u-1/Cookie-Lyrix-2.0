@@ -18,25 +18,13 @@ module.exports = {
       .setColor(0x5865F2)
       .setThumbnail(guild.iconURL({ size: 256 }))
       .addFields(
-        { name: 'サーバーID / Server ID', value: guild.id, inline: true },
-        { name: 'オーナー / Owner', value: `<@${guild.ownerId}>`, inline: true },
-        {
-          name: '作成日 / Created',
-          value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:F>`,
-          inline: false,
-        },
-        { name: 'メンバー数 / Members', value: `${guild.memberCount}`, inline: true },
-        { name: 'ロール数 / Roles', value: `${guild.roles.cache.size}`, inline: true },
-        {
-          name: 'チャンネル数 / Channels',
-          value: `Text: ${textChannels} / Voice: ${voiceChannels}`,
-          inline: true,
-        },
-        {
-          name: 'ブーストレベル / Boost Level',
-          value: `Level ${guild.premiumTier} (${guild.premiumSubscriptionCount} boosts)`,
-          inline: false,
-        }
+        { name: 'サーバーID / Server ID', value: guild.id, inline: false },
+        { name: 'オーナー / Owner', value: `<@${guild.ownerId}>`, inline: false },
+        { name: '作成日 / Created', value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:F>`, inline: false },
+        { name: 'メンバー数 / Members', value: `${guild.memberCount}`, inline: false },
+        { name: 'ロール数 / Roles', value: `${guild.roles.cache.size}`, inline: false },
+        { name: 'チャンネル数 / Channels', value: `Text: ${textChannels} / Voice: ${voiceChannels}`, inline: false },
+        { name: 'ブーストレベル / Boost Level', value: `Level ${guild.premiumTier} (${guild.premiumSubscriptionCount} boosts)`, inline: false }
       );
 
     if (guild.bannerURL()) {

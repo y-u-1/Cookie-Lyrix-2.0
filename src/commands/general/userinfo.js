@@ -18,7 +18,7 @@ module.exports = {
       .setColor(0x5865F2)
       .setThumbnail(targetUser.displayAvatarURL({ size: 256 }))
       .addFields(
-        { name: 'ID / ID', value: targetUser.id, inline: true },
+        { name: 'ID', value: targetUser.id, inline: false },
         {
           name: 'アカウント作成日 / Account Created',
           value: `<t:${Math.floor(targetUser.createdTimestamp / 1000)}:F>`,
@@ -55,6 +55,7 @@ module.exports = {
       embed.addFields({
         name: '注記 / Note',
         value: 'このユーザーは現在サーバーにいません。 / This user is not currently in the server.',
+        inline: false,
       });
     }
 
