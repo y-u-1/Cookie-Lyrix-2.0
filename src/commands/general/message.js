@@ -54,12 +54,12 @@ module.exports = {
     if (imageUrl) embed.setImage(imageUrl);
     if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
 
-    // 10個の添付ファイルを取得
+    // 10個の添付ファイルを取得して AttachmentBuilder に変換
     const files = [];
     for (let i = 1; i <= 10; i++) {
-      const file = interaction.options.getAttachment(`file${i}`);
-      if (file) {
-        files.push(file);
+      const attachment = interaction.options.getAttachment(`file${i}`);
+      if (attachment) {
+        files.push(new AttachmentBuilder(attachment.url, { name: attachment.name }));
       }
     }
 
