@@ -22,7 +22,12 @@ module.exports = {
       sub
         .setName('generate')
         .setDescription('コードを生成 / Generate a code')
-        .addIntegerOption((opt) => opt.setName('coins').setDescription('付与するコイン数 / Coins to grant').setMinValue(1).setRequired(true))
+        .addIntegerOption((opt) => opt.setName('coins').setDescription('付与するコイン数 / Coins to grant').setMinValue(0).setRequired(false))
+        .addRoleOption((opt) => opt.setName('role').setDescription('付与するロール / Role to grant').setRequired(false))
+        .addIntegerOption((opt) => opt.setName('xp').setDescription('付与するXP / XP to grant').setMinValue(1).setRequired(false))
+        .addStringOption((opt) => opt.setName('image_url').setDescription('DMで送る画像URL / Image URL to send in DM').setRequired(false))
+        .addStringOption((opt) => opt.setName('dm_message').setDescription('DMで送るメッセージ / DM message to send').setRequired(false))
+        .addStringOption((opt) => opt.setName('message').setDescription('引き換え時のカスタムメッセージ / Custom message').setRequired(false))
         .addStringOption((opt) => 
           opt.setName('max_uses')
             .setDescription('先着何名まで有効か (数字または x で無制限) / Max total uses (number or x)')
@@ -31,14 +36,18 @@ module.exports = {
           opt.setName('max_uses_per_user')
             .setDescription('1人当たりの使用回数 (数字または x で無制限) / Max uses per user (number or x)')
             .setRequired(false))
-        .addStringOption((opt) => opt.setName('message').setDescription('引き換え時のカスタムメッセージ / Custom message').setRequired(false))
     )
     .addSubcommand((sub) =>
       sub
         .setName('edit')
-        .setDescription('コードのメッセージや回数を編集 / Edit code message or uses')
+        .setDescription('コードの設定を編集 / Edit code settings')
         .addStringOption((opt) => opt.setName('code').setDescription('編集するコード / Code to edit').setRequired(true))
-        .addStringOption((opt) => opt.setName('message').setDescription('新しいメッセージ / New message').setRequired(false))
+        .addIntegerOption((opt) => opt.setName('coins').setDescription('新しいコイン数 / New coins').setMinValue(0).setRequired(false))
+        .addRoleOption((opt) => opt.setName('role').setDescription('新しいロール / New role').setRequired(false))
+        .addIntegerOption((opt) => opt.setName('xp').setDescription('新しいXP / New XP').setMinValue(1).setRequired(false))
+        .addStringOption((opt) => opt.setName('image_url').setDescription('新しい画像URL / New image URL').setRequired(false))
+        .addStringOption((opt) => opt.setName('dm_message').setDescription('新しいDMメッセージ / New DM message').setRequired(false))
+        .addStringOption((opt) => opt.setName('message').setDescription('新しいカスタムメッセージ / New custom message').setRequired(false))
         .addStringOption((opt) => 
           opt.setName('max_uses')
             .setDescription('新しい先着人数 (数字または x) / New max total uses (number or x)')
@@ -67,7 +76,11 @@ module.exports = {
     };
 
     if (sub === 'generate') {
-      const coins = interaction.options.getInteger('coins');
+      const coins = interaction.options.getInteger('coins') ?? 0;
+      const role = interaction.options.getRole('role');
+      const xp = interaction.options.getInteger('xp');
+      const imageUrl = interaction.options.getString('image_url');
+      const dmMessage = interaction.options.getString('dm_message');
       const message = interaction.options.getString('message');
       
       const maxUses = await parseUses(interaction.options.getString('max_uses'));
@@ -78,6 +91,12 @@ module.exports = {
         return interaction.reply({ content: errMsg, ephemeral: true });
       }
 
+      // どの報酬も設定されていない場合はエラー
+      if (coins === 0 && !role && !xp && !imageUrl && !dmMessage) {
+        const errMsg = await tGuild(interaction.guild.id, 'code.no_rewards');
+        return interaction.reply({ content: errMsg, ephemeral: true });
+      }
+
       const code = generateCode();
 
       await prisma.redeemCode.create({
@@ -85,6 +104,10 @@ module.exports = {
           guildId: interaction.guild.id,
           code,
           coins,
+          roleId: role?.id ?? null,
+          xp: xp ? BigInt(xp) : null,
+          imageUrl,
+          dmMessage,
           customMessage: message,
           maxUses,
           maxUsesPerUser,
@@ -103,12 +126,22 @@ module.exports = {
 
     } else if (sub === 'edit') {
       const codeInput = interaction.options.getString('code');
+      const coins = interaction.options.getInteger('coins');
+      const role = interaction.options.getRole('role');
+      const xp = interaction.options.getInteger('xp');
+      const imageUrl = interaction.options.getString('image_url');
+      const dmMessage = interaction.options.getString('dm_message');
       const message = interaction.options.getString('message');
       const maxUsesInput = interaction.options.getString('max_uses');
       const maxUsesPerUserInput = interaction.options.getString('max_uses_per_user');
 
       const data = {};
-      if (message) data.customMessage = message;
+      if (coins !== null) data.coins = coins;
+      if (role) data.roleId = role.id;
+      if (xp !== null) data.xp = BigInt(xp);
+      if (imageUrl !== null) data.imageUrl = imageUrl;
+      if (dmMessage !== null) data.dmMessage = dmMessage;
+      if (message !== null) data.customMessage = message;
       
       if (maxUsesInput) {
         const parsed = await parseUses(maxUsesInput);

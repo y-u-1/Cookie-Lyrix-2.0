@@ -271,12 +271,13 @@ const messages = {
     'code.deleted': '### ギフトコード削除\nコード: `{code}` を削除しました。',
     'code.not_found': '### エラー\nコードが見つからないか、すでに使用されています。',
     'code.already_used': '### エラー\nこのコードはすでに使用されています。',
-    'code.redeemed': '### コード交換完了\n{coins} コインを受け取りました！\n現在の所持コイン: **{total}**',
+    'code.redeemed': '### コード交換完了\n以下の報酬を受け取りました！\n{rewards}',
     'code.invalid_uses': '### エラー\n使用可能回数は1以上の数字、または `x` を指定してください。',
     'code.no_edit_target': '### エラー\n編集する項目（メッセージまたは使用回数）を指定してください。',
     'code.faster_ended': '### 終了\nこの先着コードは定員に達したため、終了しました。',
     'code.user_limit_reached': '### エラー\n1人当たりの使用上限({max})に達したため、このコードは使用できません。',
     'code.redeem_error': '### エラー\nコードの引き換え中にエラーが発生しました。',
+    'code.no_rewards': '### エラー\n少なくとも1つの報酬（コイン、ロール、XP、DMなど）を指定してください。',
 
     // Redeem Panel
     'redeem.panel_title': 'ギフトコード引き換え',
@@ -634,12 +635,13 @@ const messages = {
     'code.deleted': '### Gift Code Deleted\nCode: `{code}` has been deleted.',
     'code.not_found': '### Error\nCode not found or already used.',
     'code.already_used': '### Error\nThis code has already been used.',
-    'code.redeemed': '### Code Redeemed\nYou received {coins} coins!\nCurrent coins: **{total}**',
+    'code.redeemed': '### Code Redeemed\nYou received the following rewards!\n{rewards}',
     'code.invalid_uses': '### Error\nMax uses must be a number 1 or greater, or `x`.',
     'code.no_edit_target': '### Error\nPlease specify an item to edit (message or max uses).',
     'code.faster_ended': '### Ended\nThis faster code has reached its limit and is now over.',
     'code.redeem_error': '### Error\nAn error occurred while redeeming this code.',
     'code.user_limit_reached': '### Error\nYou have reached the per-user limit ({max}) for this code.',
+    'code.no_rewards': '### Error\nPlease specify at least one reward (coins, role, XP, DM, etc.).',
 
     // Redeem Panel
     'redeem.panel_title': 'Gift Code Redemption',

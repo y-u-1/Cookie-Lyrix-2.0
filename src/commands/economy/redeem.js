@@ -1,7 +1,7 @@
 // src/commands/economy/redeem.js
 const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 const { prisma } = require('../../lib/database');
-const { addCoins } = require('../../lib/levelService');
+const { addCoins, addXp } = require('../../lib/levelService');
 const { t, tGuild, getGuildLanguage } = require('../../lib/i18n');
 
 module.exports = {
@@ -17,10 +17,6 @@ module.exports = {
 };
 
 async function handleOpenModal(interaction) {
-  // showModal()は事前にdeferできない(これ自体が最初の応答)ため、
-  // その前段のDB問い合わせを最小限(1回)に抑える。
-  // 以前はtGuild()を3回連続で呼んでおり、DBが遅い瞬間に
-  // 3秒のインタラクション期限に間に合わずパネルが反応しないことがあった。
   const lang = await getGuildLanguage(interaction.guild.id);
   const modalTitle = t(lang, 'redeem.modal_title');
   const fieldLabel = t(lang, 'redeem.modal_label');
@@ -48,14 +44,9 @@ async function handleSubmit(interaction) {
 }
 
 async function processRedeem(interaction, codeInput) {
-  // モーダル経由の時だけdeferしていたが、通常の/redeemコマンドの方が
-  // DBトランザクション・コイン付与・ログ送信など処理が多く、
-  // 3秒のインタラクション期限を超えるリスクが高いため、
-  // 常に最初にdeferReplyしてから処理する。
   await interaction.deferReply({ ephemeral: true });
 
   try {
-    // コードを検索
     const code = await prisma.redeemCode.findUnique({
       where: { code: codeInput.toUpperCase() },
       include: { usages: true }
@@ -67,14 +58,12 @@ async function processRedeem(interaction, codeInput) {
       return interaction.editReply({ embeds: [embed] });
     }
 
-    // 全体の使用回数チェック
     if (code.maxUses > 0 && code.uses >= code.maxUses) {
       const msg = await tGuild(interaction.guild.id, 'code.faster_ended');
       const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
       return interaction.editReply({ embeds: [embed] });
     }
 
-    // ユーザーごとの使用回数チェック
     const userUsage = code.usages.find(u => u.userId === interaction.user.id);
     const userCount = userUsage?.count ?? 0;
     if (code.maxUsesPerUser > 0 && userCount >= code.maxUsesPerUser) {
@@ -83,7 +72,6 @@ async function processRedeem(interaction, codeInput) {
       return interaction.editReply({ embeds: [embed] });
     }
 
-    // トランザクションで安全にカウントを更新
     try {
       await prisma.$transaction([
         prisma.redeemCode.updateMany({
@@ -106,8 +94,43 @@ async function processRedeem(interaction, codeInput) {
       return interaction.editReply({ embeds: [embed] });
     }
 
-    // コイン付与
-    const newTotal = await addCoins(interaction.guild.id, interaction.user.id, code.coins);
+    const rewardsText = [];
+
+    // 1. コイン付与
+    if (code.coins > 0) {
+      const newTotal = await addCoins(interaction.guild.id, interaction.user.id, code.coins);
+      rewardsText.push(`💰 ${code.coins} コイン (合計: ${newTotal})`);
+    }
+
+    // 2. XP付与
+    if (code.xp) {
+      await addXp(interaction.guild.id, interaction.user.id, Number(code.xp));
+      rewardsText.push(`✨ ${Number(code.xp)} XP`);
+    }
+
+    // 3. ロール付与
+    if (code.roleId) {
+      const member = interaction.member;
+      await member.roles.add(code.roleId).catch(() => {});
+      rewardsText.push(`🎭 <@&${code.roleId}>`);
+    }
+
+    // 4. DM送信 (画像またはメッセージ)
+    if (code.imageUrl || code.dmMessage) {
+      try {
+        const dmEmbed = new EmbedBuilder()
+          .setColor(0x57F287)
+          .setTitle('🎁 ギフトコード報酬 / Gift Code Reward')
+          .setDescription(code.dmMessage || ' ');
+        if (code.imageUrl) dmEmbed.setImage(code.imageUrl);
+        
+        await interaction.user.send({ embeds: [dmEmbed] });
+        rewardsText.push(`📩 DM送信`);
+      } catch (dmErr) {
+        console.error('DM Send Error:', dmErr);
+        rewardsText.push(`⚠️ DM送信失敗 (DMを許可してください)`);
+      }
+    }
 
     // --- Redeemログ送信 ---
     try {
@@ -124,7 +147,7 @@ async function processRedeem(interaction, codeInput) {
             .addFields(
               { name: 'User', value: `<@${interaction.user.id}>`, inline: false },
               { name: 'Code', value: `\`${code.code}\``, inline: false },
-              { name: 'Coins', value: `${code.coins}`, inline: false },
+              { name: 'Rewards', value: rewardsText.join('\n') || 'None', inline: false },
               { name: 'Total Uses', value: `${code.uses + 1} / ${code.maxUses === 0 ? '∞' : code.maxUses}`, inline: true },
               { name: 'User Uses', value: `${userCount + 1} / ${code.maxUsesPerUser === 0 ? '∞' : code.maxUsesPerUser}`, inline: true }
             )
@@ -136,7 +159,7 @@ async function processRedeem(interaction, codeInput) {
       console.error('Redeem Log Error:', logErr);
     }
 
-    let msg = await tGuild(interaction.guild.id, 'code.redeemed', { coins: code.coins, total: newTotal });
+    let msg = await tGuild(interaction.guild.id, 'code.redeemed', { rewards: rewardsText.join('\n') || 'なし' });
     if (code.customMessage) {
       msg += `\n\n> ${code.customMessage}`;
     }

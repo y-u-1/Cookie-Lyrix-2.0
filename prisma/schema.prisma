@@ -322,6 +322,11 @@ model RedeemCode {
   maxUses         Int      @default(1)
   maxUsesPerUser  Int      @default(1)
   uses            Int      @default(0)
+  // 追加: 新しい報酬オプション
+  roleId          String?
+  xp              BigInt?
+  imageUrl        String?
+  dmMessage       String?
   createdAt       DateTime @default(now())
 
   usages          RedeemCodeUsage[]
