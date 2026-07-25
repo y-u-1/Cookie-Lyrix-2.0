@@ -7,7 +7,7 @@ const { joinLinesSafely } = require('../../lib/embedUtils');
 const logger = require('../../lib/logger');
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
-const PAGE_SIZE = 20; // 20人に変更
+const PAGE_SIZE = 20; // 1ページ20人に変更
 
 async function updatePanel(client, panel) {
   const channel = await client.channels.fetch(panel.channelId).catch(() => null);
@@ -24,9 +24,9 @@ async function updatePanel(client, panel) {
     title = await tGuild(panel.guildId, 'economy.coin_panel_title');
     desc = await tGuild(panel.guildId, 'economy.coin_panel_desc');
     fieldName = await tGuild(panel.guildId, 'level.top_users');
-    const coinsName = await tGuild(panel.guildId, 'economy.coin_name'); // ここで言語を取得
+    // 「コイン」表記を削除し、数字のみに変更
     const topUsers = await getTopUsersByCoins(panel.guildId, PAGE_SIZE);
-    lines = topUsers.map((u, i) => `**${i + 1}.** <@${u.userId}> - **${Number(u.coins)} ${coinsName}**`);
+    lines = topUsers.map((u, i) => `**${i + 1}.** <@${u.userId}> - **${Number(u.coins)}**`);
     color = 0xFEE75C;
     pagePrefix = 'coin';
   } else if (panel.type === 'AFFINITY') {

@@ -4,7 +4,7 @@ const { getTopUsersByCoins } = require('../../lib/levelService');
 const { tGuild } = require('../../lib/i18n');
 const { joinLinesSafely } = require('../../lib/embedUtils');
 
-const PAGE_SIZE = 20; // 20人に変更
+const PAGE_SIZE = 20; // 1ページ20人に変更
 
 async function handlePage(interaction) {
   const page = parseInt(interaction.customId.split('_')[2]);
@@ -15,13 +15,13 @@ async function handlePage(interaction) {
   const topUsersName = await tGuild(interaction.guild.id, 'level.top_users');
   const noData = await tGuild(interaction.guild.id, 'level.no_data');
   const pageText = await tGuild(interaction.guild.id, 'level.page', { page: page });
-  const coinsName = await tGuild(interaction.guild.id, 'economy.coin_name'); // 言語を取得
   
   const topUsers = await getTopUsersByCoins(interaction.guild.id, PAGE_SIZE, offset); 
   
+  // 「コイン」表記を削除し、数字のみに変更
   const lines = topUsers.map((u, i) => {
     const rank = offset + i + 1;
-    return `**${rank}.** <@${u.userId}> - **${Number(u.coins)} ${coinsName}**`;
+    return `**${rank}.** <@${u.userId}> - **${Number(u.coins)}**`;
   });
 
   const embed = new EmbedBuilder()
