@@ -94,25 +94,27 @@ async function processRedeem(interaction, codeInput) {
       return interaction.editReply({ embeds: [embed] });
     }
 
+    const lang = await getGuildLanguage(interaction.guild.id);
     const rewardsText = [];
 
     // 1. コイン付与
     if (code.coins > 0) {
       const newTotal = await addCoins(interaction.guild.id, interaction.user.id, code.coins);
-      rewardsText.push(`💰 ${code.coins} コイン (合計: ${newTotal})`);
+      const coinsName = t(lang, 'economy.coin_name');
+      rewardsText.push(`${code.coins} ${coinsName} (Total: ${Number(newTotal)})`);
     }
 
     // 2. XP付与
     if (code.xp) {
       await addXp(interaction.guild.id, interaction.user.id, Number(code.xp));
-      rewardsText.push(`✨ ${Number(code.xp)} XP`);
+      rewardsText.push(`${Number(code.xp)} XP`);
     }
 
     // 3. ロール付与
     if (code.roleId) {
       const member = interaction.member;
       await member.roles.add(code.roleId).catch(() => {});
-      rewardsText.push(`🎭 <@&${code.roleId}>`);
+      rewardsText.push(`Role: <@&${code.roleId}>`);
     }
 
     // 4. DM送信 (画像またはメッセージ)
@@ -120,15 +122,15 @@ async function processRedeem(interaction, codeInput) {
       try {
         const dmEmbed = new EmbedBuilder()
           .setColor(0x57F287)
-          .setTitle('🎁 ギフトコード報酬 / Gift Code Reward')
+          .setTitle(t(lang, 'redeem.dm_title'))
           .setDescription(code.dmMessage || ' ');
         if (code.imageUrl) dmEmbed.setImage(code.imageUrl);
         
         await interaction.user.send({ embeds: [dmEmbed] });
-        rewardsText.push(`📩 DM送信`);
+        rewardsText.push(t(lang, 'redeem.dm_sent'));
       } catch (dmErr) {
         console.error('DM Send Error:', dmErr);
-        rewardsText.push(`⚠️ DM送信失敗 (DMを許可してください)`);
+        rewardsText.push(t(lang, 'redeem.dm_failed'));
       }
     }
 
@@ -159,7 +161,7 @@ async function processRedeem(interaction, codeInput) {
       console.error('Redeem Log Error:', logErr);
     }
 
-    let msg = await tGuild(interaction.guild.id, 'code.redeemed', { rewards: rewardsText.join('\n') || 'なし' });
+    let msg = await tGuild(interaction.guild.id, 'code.redeemed', { rewards: rewardsText.join('\n') || t(lang, 'redeem.no_rewards') });
     if (code.customMessage) {
       msg += `\n\n> ${code.customMessage}`;
     }
@@ -169,7 +171,7 @@ async function processRedeem(interaction, codeInput) {
 
   } catch (err) {
     console.error('Redeem Process Error:', err);
-    const errorMsg = await tGuild(interaction.guild.id, 'code.redeem_error').catch(() => '### エラー\nコードの引き換え中にエラーが発生しました。');
+    const errorMsg = await tGuild(interaction.guild.id, 'code.redeem_error').catch(() => '### Error\nAn error occurred while redeeming this code.');
     try {
       if (interaction.deferred) {
         await interaction.editReply({ content: errorMsg });

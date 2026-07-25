@@ -203,14 +203,14 @@ const messages = {
     'economy.coins_other': '### 所持コイン\n{user} の所持コイン: **{coins}**',
     'economy.coins_added': '### コイン付与\n{user} に {amount} コインを付与しました。',
     'economy.coins_removed': '### コイン剥奪\n{user} から {amount} コインを剥奪しました。',
-    'economy.coin_panel_created': '### コインリーダーボード作成\nこのチャンネルに5分ごとに更新されるコインランキングを作成しました。',
-    'economy.coin_panel_title': 'コインランキング',
-    'economy.coin_panel_desc': '5分ごとに自動更新されます。\n現在のサーバー上位30名のコインランキングです。',
-    'economy.coin_name': 'コイン',
     'economy.coins_added_all': '### コイン付与\n全員に {amount} コインを付与しました。',
     'economy.coins_removed_all': '### コイン剥奪\n全員から {amount} コインを剥奪しました。',
     'economy.coins_cleared': '### コイン全削除\n{user} のコインを0にしました。',
     'economy.coins_cleared_all': '### コイン全削除\n全員のコインを0にしました。',
+    'economy.coin_panel_created': '### コインリーダーボード作成\nこのチャンネルに5分ごとに更新されるコインランキングを作成しました。',
+    'economy.coin_panel_title': 'コインランキング',
+    'economy.coin_panel_desc': '5分ごとに自動更新されます。\n現在のサーバー上位30名のコインランキングです。',
+    'economy.coin_name': 'コイン',
     
     // Gamble
     'gamble.invalid_amount': '### エラー\n掛け金は100コイン以上で指定してください。',
@@ -271,6 +271,7 @@ const messages = {
     'code.generated': '### ギフトコード生成\nコード: `{code}`\n報酬: {coins} コイン',
     'code.generated_detail': '> 有効人数: **{total}**\n> 1人当たり: **{user}**',
     'code.unlimited': '無制限',
+    'code.no_rewards': '### エラー\n少なくとも1つの報酬（コイン、ロール、XP、DMなど）を指定してください。',
     'code.edited': '### ギフトコード編集\nコード: `{code}` の設定を更新しました。',
     'code.deleted': '### ギフトコード削除\nコード: `{code}` を削除しました。',
     'code.not_found': '### エラー\nコードが見つからないか、すでに使用されています。',
@@ -281,7 +282,6 @@ const messages = {
     'code.faster_ended': '### 終了\nこの先着コードは定員に達したため、終了しました。',
     'code.user_limit_reached': '### エラー\n1人当たりの使用上限({max})に達したため、このコードは使用できません。',
     'code.redeem_error': '### エラー\nコードの引き換え中にエラーが発生しました。',
-    'code.no_rewards': '### エラー\n少なくとも1つの報酬（コイン、ロール、XP、DMなど）を指定してください。',
     'code.list_title': '有効なギフトコード一覧',
     'code.list_empty': '有効なコードはありません。',
 
@@ -292,6 +292,10 @@ const messages = {
     'redeem.modal_title': 'ギフトコード入力',
     'redeem.modal_label': 'ギフトコード',
     'redeem.modal_placeholder': 'XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX',
+    'redeem.dm_title': 'ギフトコード報酬',
+    'redeem.dm_sent': 'DM送信',
+    'redeem.dm_failed': 'DM送信失敗',
+    'redeem.no_rewards': 'なし',
 
     // Temp VC
     'tempvc.setup_success': '### Temp VC設定\n作成用チャンネル: {channel}\nカテゴリ: {category}\nに設定しました。',
@@ -573,14 +577,14 @@ const messages = {
     'economy.coins_other': '### User Coins\n{user} has **{coins}** coins.',
     'economy.coins_added': '### Coins Added\nAdded {amount} coins to {user}.',
     'economy.coins_removed': '### Coins Removed\nRemoved {amount} coins from {user}.',
-    'economy.coin_panel_created': '### Coin Leaderboard Created\nA coin leaderboard that updates every 5 minutes has been created in this channel.',
-    'economy.coin_panel_title': 'Coin Leaderboard',
-    'economy.coin_panel_desc': 'Updates automatically every 5 minutes.\nTop 30 users in this server.',
-    'economy.coin_name': 'coins',
     'economy.coins_added_all': '### Coins Added\nAdded {amount} coins to all users.',
     'economy.coins_removed_all': '### Coins Removed\nRemoved {amount} coins from all users.',
     'economy.coins_cleared': '### Coins Cleared\n{user}\'s coins have been set to 0.',
     'economy.coins_cleared_all': '### Coins Cleared\nAll users\' coins have been set to 0.',
+    'economy.coin_panel_created': '### Coin Leaderboard Created\nA coin leaderboard that updates every 5 minutes has been created in this channel.',
+    'economy.coin_panel_title': 'Coin Leaderboard',
+    'economy.coin_panel_desc': 'Updates automatically every 5 minutes.\nTop 30 users in this server.',
+    'economy.coin_name': 'coins',
 
     // Gamble
     'gamble.invalid_amount': '### Error\nThe bet amount must be at least 100 coins.',
@@ -641,6 +645,7 @@ const messages = {
     'code.generated': '### Gift Code Generated\nCode: `{code}`\nReward: {coins} coins',
     'code.generated_detail': '> Max Users: **{total}**\n> Max Uses/User: **{user}**',
     'code.unlimited': 'Unlimited',
+    'code.no_rewards': '### Error\nPlease specify at least one reward (coins, role, XP, DM, etc.).',
     'code.edited': '### Gift Code Edited\nThe settings for code `{code}` have been updated.',
     'code.deleted': '### Gift Code Deleted\nCode: `{code}` has been deleted.',
     'code.not_found': '### Error\nCode not found or already used.',
@@ -651,7 +656,6 @@ const messages = {
     'code.faster_ended': '### Ended\nThis faster code has reached its limit and is now over.',
     'code.redeem_error': '### Error\nAn error occurred while redeeming this code.',
     'code.user_limit_reached': '### Error\nYou have reached the per-user limit ({max}) for this code.',
-    'code.no_rewards': '### Error\nPlease specify at least one reward (coins, role, XP, DM, etc.).',
     'code.list_title': 'Active Gift Codes',
     'code.list_empty': 'There are no active codes.',
 
@@ -662,6 +666,10 @@ const messages = {
     'redeem.modal_title': 'Gift Code Input',
     'redeem.modal_label': 'Gift Code',
     'redeem.modal_placeholder': 'XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX',
+    'redeem.dm_title': 'Gift Code Reward',
+    'redeem.dm_sent': 'DM Sent',
+    'redeem.dm_failed': 'DM Send Failed',
+    'redeem.no_rewards': 'None',
 
     // Temp VC
     'tempvc.setup_success': '### Temp VC Setup\nCreation channel: {channel}\nCategory: {category}\nConfigured successfully.',
