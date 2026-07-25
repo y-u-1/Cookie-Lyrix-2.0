@@ -1,77 +1,85 @@
 // src/commands/general/message.js
-const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder } = require('discord.js');
 const { tGuild } = require('../../lib/i18n');
+
+const MAX_ATTACHMENTS = 10;
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('message')
-    .setDescription('カスタム埋め込みメッセージを送信します / Send a custom embed message')
-    .addStringOption((opt) => opt.setName('title').setDescription('タイトル / Title').setRequired(true))
-    .addStringOption((opt) => opt.setName('description').setDescription('説明 (\nで改行) / Description').setRequired(false))
-    .addStringOption((opt) => opt.setName('color').setDescription('Hexカラー / Hex color').setRequired(false))
-    .addStringOption((opt) => opt.setName('image_url').setDescription('画像URL (Embed内) / Image URL (in Embed)').setRequired(false))
-    .addStringOption((opt) => opt.setName('thumbnail_url').setDescription('サムネイルURL (Embed内) / Thumbnail URL (in Embed)').setRequired(false))
-    .addAttachmentOption((opt) => 
-      opt.setName('file1').setDescription('添付ファイル1 (Embedの下) / Attachment 1').setRequired(false))
-    .addAttachmentOption((opt) => 
-      opt.setName('file2').setDescription('添付ファイル2 (Embedの下) / Attachment 2').setRequired(false))
-    .addAttachmentOption((opt) => 
-      opt.setName('file3').setDescription('添付ファイル3 (Embedの下) / Attachment 3').setRequired(false))
-    .addAttachmentOption((opt) => 
-      opt.setName('file4').setDescription('添付ファイル4 (Embedの下) / Attachment 4').setRequired(false))
-    .addAttachmentOption((opt) => 
-      opt.setName('file5').setDescription('添付ファイル5 (Embedの下) / Attachment 5').setRequired(false))
-    .addAttachmentOption((opt) => 
-      opt.setName('file6').setDescription('添付ファイル6 (Embedの下) / Attachment 6').setRequired(false))
-    .addAttachmentOption((opt) => 
-      opt.setName('file7').setDescription('添付ファイル7 (Embedの下) / Attachment 7').setRequired(false))
-    .addAttachmentOption((opt) => 
-      opt.setName('file8').setDescription('添付ファイル8 (Embedの下) / Attachment 8').setRequired(false))
-    .addAttachmentOption((opt) => 
-      opt.setName('file9').setDescription('添付ファイル9 (Embedの下) / Attachment 9').setRequired(false))
-    .addAttachmentOption((opt) => 
-      opt.setName('file10').setDescription('添付ファイル10 (Embedの下) / Attachment 10').setRequired(false)),
+    .setDescription('Botとしてメッセージを送信します / Send a message as the bot')
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addSubcommand((sub) => {
+      sub
+        .setName('send')
+        .setDescription('指定チャンネルにEmbedメッセージを送信する')
+        .addChannelOption((opt) =>
+          opt
+            .setName('channel')
+            .setDescription('送信先チャンネル / Target channel')
+            .addChannelTypes(ChannelType.GuildText)
+            .setRequired(true)
+        )
+        .addStringOption((opt) =>
+          opt.setName('content').setDescription('本文 (\\n で改行) / Content').setRequired(true)
+        )
+        .addStringOption((opt) => opt.setName('title').setDescription('タイトル(任意) / Title').setRequired(false))
+        .addStringOption((opt) =>
+          opt.setName('color').setDescription('Embedの色 (例: #D97757) / Hex color').setRequired(false)
+        );
+
+      for (let i = 1; i <= MAX_ATTACHMENTS; i++) {
+        sub.addAttachmentOption((opt) =>
+          opt.setName(`attachment${i}`).setDescription(`添付ファイル ${i} / Attachment ${i}`).setRequired(false)
+        );
+      }
+
+      return sub;
+    }),
   category: 'ユーティリティ / Utility',
   async execute(interaction) {
+    if (interaction.options.getSubcommand() !== 'send') return;
+
+    const channel = interaction.options.getChannel('channel');
+    const rawContent = interaction.options.getString('content');
+    const content = rawContent.replaceAll('\\n', '\n');
     const title = interaction.options.getString('title');
-    // \n という文字列を実際の改行コードに変換
-    const desc = (interaction.options.getString('description') ?? '').replace(/\\n/g, '\n');
-    const colorInput = interaction.options.getString('color') ?? '#5865F2';
-    const imageUrl = interaction.options.getString('image_url');
-    const thumbnailUrl = interaction.options.getString('thumbnail_url');
+    const colorInput = interaction.options.getString('color');
 
-    const hex = colorInput.replace('#', '');
-    if (!/^[0-9a-fA-F]{6}$/.test(hex)) {
-      const msg = await tGuild(interaction.guild.id, 'message.invalid_color');
-      return interaction.reply({ content: msg, ephemeral: true });
-    }
+    await interaction.deferReply({ ephemeral: true });
 
-    const embed = new EmbedBuilder()
-      .setColor(parseInt(hex, 16))
-      .setTitle(title)
-      .setDescription(desc);
+    try {
+      const embed = new EmbedBuilder()
+        .setDescription(content)
+        .setColor(parseColor(colorInput) ?? 0x5865F2);
 
-    if (imageUrl) embed.setImage(imageUrl);
-    if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
+      if (title) embed.setTitle(title);
 
-    // 10個の添付ファイルを取得して AttachmentBuilder に変換
-    const files = [];
-    for (let i = 1; i <= 10; i++) {
-      const attachment = interaction.options.getAttachment(`file${i}`);
-      if (attachment) {
-        files.push(new AttachmentBuilder(attachment.url, { name: attachment.name }));
+      const files = [];
+      for (let i = 1; i <= MAX_ATTACHMENTS; i++) {
+        const attachment = interaction.options.getAttachment(`attachment${i}`);
+        if (attachment) {
+          files.push(attachment);
+        }
       }
-    }
 
-    // 添付ファイルがある場合は、filesプロパティとして渡す（Embedの下に表示される）
-    if (files.length > 0) {
-      await interaction.channel.send({ embeds: [embed], files });
-    } else {
-      await interaction.channel.send({ embeds: [embed] });
-    }
+      await channel.send({ embeds: [embed], files });
 
-    const msg = await tGuild(interaction.guild.id, 'message.sent');
-    const successEmbed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
-    await interaction.reply({ embeds: [successEmbed], ephemeral: true });
+      const msg = await tGuild(interaction.guild.id, 'message.sent');
+      const successEmbed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
+      await interaction.editReply({ embeds: [successEmbed] });
+    } catch (error) {
+      console.error('Message command error:', error);
+      const errorMsg = await tGuild(interaction.guild.id, 'message.error');
+      const errorEmbed = new EmbedBuilder().setColor(0xED4245).setDescription(errorMsg);
+      await interaction.editReply({ embeds: [errorEmbed] });
+    }
   },
 };
+
+function parseColor(colorString) {
+  if (!colorString) return null;
+  const hex = colorString.replace('#', '');
+  const parsed = parseInt(hex, 16);
+  return Number.isNaN(parsed) ? null : parsed;
+}
