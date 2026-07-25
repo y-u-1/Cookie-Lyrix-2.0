@@ -24,8 +24,8 @@ async function updatePanel(client, panel) {
     title = await tGuild(panel.guildId, 'economy.coin_panel_title');
     desc = await tGuild(panel.guildId, 'economy.coin_panel_desc');
     fieldName = await tGuild(panel.guildId, 'level.top_users');
-    // 「コイン」表記を削除し、数字のみに変更
     const topUsers = await getTopUsersByCoins(panel.guildId, PAGE_SIZE);
+    // 「コイン」表記を削除し、数字のみに変更
     lines = topUsers.map((u, i) => `**${i + 1}.** <@${u.userId}> - **${Number(u.coins)}**`);
     color = 0xFEE75C;
     pagePrefix = 'coin';
