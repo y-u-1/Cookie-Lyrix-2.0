@@ -7,7 +7,7 @@ const { joinLinesSafely } = require('../../lib/embedUtils');
 const logger = require('../../lib/logger');
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
-const PAGE_SIZE = 10; // 1024文字制限に収まるよう、1ページあたりの表示件数を抑える(各ページ送りボタンの件数と合わせる)
+const PAGE_SIZE = 20; // 20人に変更
 
 async function updatePanel(client, panel) {
   const channel = await client.channels.fetch(panel.channelId).catch(() => null);
@@ -24,7 +24,7 @@ async function updatePanel(client, panel) {
     title = await tGuild(panel.guildId, 'economy.coin_panel_title');
     desc = await tGuild(panel.guildId, 'economy.coin_panel_desc');
     fieldName = await tGuild(panel.guildId, 'level.top_users');
-    const coinsName = await tGuild(panel.guildId, 'economy.coin_name');
+    const coinsName = await tGuild(panel.guildId, 'economy.coin_name'); // ここで言語を取得
     const topUsers = await getTopUsersByCoins(panel.guildId, PAGE_SIZE);
     lines = topUsers.map((u, i) => `**${i + 1}.** <@${u.userId}> - **${Number(u.coins)} ${coinsName}**`);
     color = 0xFEE75C;

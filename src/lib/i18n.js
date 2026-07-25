@@ -278,6 +278,8 @@ const messages = {
     'code.user_limit_reached': '### エラー\n1人当たりの使用上限({max})に達したため、このコードは使用できません。',
     'code.redeem_error': '### エラー\nコードの引き換え中にエラーが発生しました。',
     'code.no_rewards': '### エラー\n少なくとも1つの報酬（コイン、ロール、XP、DMなど）を指定してください。',
+    'code.list_title': '有効なギフトコード一覧',
+    'code.list_empty': '有効なコードはありません。',
 
     // Redeem Panel
     'redeem.panel_title': 'ギフトコード引き換え',
@@ -642,6 +644,8 @@ const messages = {
     'code.redeem_error': '### Error\nAn error occurred while redeeming this code.',
     'code.user_limit_reached': '### Error\nYou have reached the per-user limit ({max}) for this code.',
     'code.no_rewards': '### Error\nPlease specify at least one reward (coins, role, XP, DM, etc.).',
+    'code.list_title': 'Active Gift Codes',
+    'code.list_empty': 'There are no active codes.',
 
     // Redeem Panel
     'redeem.panel_title': 'Gift Code Redemption',
