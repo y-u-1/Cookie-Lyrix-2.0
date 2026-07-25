@@ -101,13 +101,13 @@ async function processRedeem(interaction, codeInput) {
     if (code.coins > 0) {
       const newTotal = await addCoins(interaction.guild.id, interaction.user.id, code.coins);
       const coinsName = t(lang, 'economy.coin_name');
-      rewardsText.push(`${code.coins} ${coinsName} (Total: ${Number(newTotal)})`);
+      rewardsText.push(`${Number(code.coins)} ${coinsName} (Total: ${Number(newTotal)})`); // Number()で変換
     }
 
     // 2. XP付与
     if (code.xp) {
       await addXp(interaction.guild.id, interaction.user.id, Number(code.xp));
-      rewardsText.push(`${Number(code.xp)} XP`);
+      rewardsText.push(`${Number(code.xp)} XP`); // Number()で変換
     }
 
     // 3. ロール付与

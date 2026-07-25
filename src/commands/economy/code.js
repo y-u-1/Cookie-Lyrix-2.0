@@ -91,7 +91,6 @@ module.exports = {
         return interaction.reply({ content: errMsg, ephemeral: true });
       }
 
-      // どの報酬も設定されていない場合はエラー
       if (coins === 0 && !role && !xp && !imageUrl && !dmMessage) {
         const errMsg = await tGuild(interaction.guild.id, 'code.no_rewards');
         return interaction.reply({ content: errMsg, ephemeral: true });
@@ -103,7 +102,7 @@ module.exports = {
         data: {
           guildId: interaction.guild.id,
           code,
-          coins,
+          coins: BigInt(coins), // BigIntに変換
           roleId: role?.id ?? null,
           xp: xp ? BigInt(xp) : null,
           imageUrl,
@@ -136,7 +135,7 @@ module.exports = {
       const maxUsesPerUserInput = interaction.options.getString('max_uses_per_user');
 
       const data = {};
-      if (coins !== null) data.coins = coins;
+      if (coins !== null) data.coins = BigInt(coins); // BigIntに変換
       if (role) data.roleId = role.id;
       if (xp !== null) data.xp = BigInt(xp);
       if (imageUrl !== null) data.imageUrl = imageUrl;

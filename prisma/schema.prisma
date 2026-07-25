@@ -317,7 +317,7 @@ model RedeemCode {
   id              String   @id @default(cuid())
   guildId         String
   code            String   @unique
-  coins           Int
+  coins           BigInt
   customMessage   String?
   maxUses         Int      @default(1)
   maxUsesPerUser  Int      @default(1)

@@ -49,7 +49,7 @@ async function sendCodeListPage(interaction, page) {
   const lines = codes.map((c, i) => {
     const usesText = c.maxUses === 0 ? '∞' : `${c.uses}/${c.maxUses}`;
     const rewards = [];
-    if (c.coins > 0) rewards.push(`${c.coins}コイン`);
+    if (c.coins > 0) rewards.push(`${Number(c.coins)}コイン`); // Number()で変換
     if (c.roleId) rewards.push('ロール');
     if (c.xp) rewards.push(`${Number(c.xp)}XP`);
     if (c.imageUrl || c.dmMessage) rewards.push('DM');
