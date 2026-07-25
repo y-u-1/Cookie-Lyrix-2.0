@@ -71,12 +71,12 @@ function permissionKeyFor(interaction) {
   
   // Leveling & Economy
   if (commandName === 'level') {
-    if (sub === 'rank' || sub === 'leaderboard' || sub === 'panel') return null;
-    return 'level-manage';
+    if (sub === 'rank' || sub === 'panel') return null;
+    return 'level-manage'; // addxp, reset は管理者のみ
   }
   if (commandName === 'coins') {
-    if (sub === 'add' || sub === 'remove') return 'level-manage';
-    return null;
+    if (sub === 'add' || sub === 'remove' || sub === 'clear') return 'level-manage'; // add, remove, clear は管理者のみ
+    return null; // check は誰でも
   }
   if (commandName === 'shop') return null;
   if (commandName === 'daily') return null;

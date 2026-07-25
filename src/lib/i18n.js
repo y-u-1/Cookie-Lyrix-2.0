@@ -207,6 +207,10 @@ const messages = {
     'economy.coin_panel_title': 'コインランキング',
     'economy.coin_panel_desc': '5分ごとに自動更新されます。\n現在のサーバー上位30名のコインランキングです。',
     'economy.coin_name': 'コイン',
+    'economy.coins_added_all': '### コイン付与\n全員に {amount} コインを付与しました。',
+    'economy.coins_removed_all': '### コイン剥奪\n全員から {amount} コインを剥奪しました。',
+    'economy.coins_cleared': '### コイン全削除\n{user} のコインを0にしました。',
+    'economy.coins_cleared_all': '### コイン全削除\n全員のコインを0にしました。',
     
     // Gamble
     'gamble.invalid_amount': '### エラー\n掛け金は100コイン以上で指定してください。',
@@ -573,6 +577,10 @@ const messages = {
     'economy.coin_panel_title': 'Coin Leaderboard',
     'economy.coin_panel_desc': 'Updates automatically every 5 minutes.\nTop 30 users in this server.',
     'economy.coin_name': 'coins',
+    'economy.coins_added_all': '### Coins Added\nAdded {amount} coins to all users.',
+    'economy.coins_removed_all': '### Coins Removed\nRemoved {amount} coins from all users.',
+    'economy.coins_cleared': '### Coins Cleared\n{user}\'s coins have been set to 0.',
+    'economy.coins_cleared_all': '### Coins Cleared\nAll users\' coins have been set to 0.',
 
     // Gamble
     'gamble.invalid_amount': '### Error\nThe bet amount must be at least 100 coins.',
