@@ -1,7 +1,7 @@
 // src/commands/economy/coins.js
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { prisma } = require('../../lib/database');
-const { getCoins, addCoins, removeCoins } = require('../../lib/levelService');
+const { getCoins, addCoins, removeCoins, getTopUsersByCoins } = require('../../lib/levelService');
 const { tGuild } = require('../../lib/i18n');
 
 module.exports = {
@@ -33,6 +33,12 @@ module.exports = {
         .setName('clear')
         .setDescription('コインを全削除 (管理者のみ) / Clear coins (Admin only)')
         .addStringOption((opt) => opt.setName('user').setDescription('対象ユーザー または x (全員) / User or x (all)').setRequired(true))
+    )
+    // ↓ ここからが復活した panel サブコマンドです
+    .addSubcommand((sub) =>
+      sub
+        .setName('panel')
+        .setDescription('5分ごとに更新されるコインランキングを設置 / Setup a coin leaderboard panel')
     ),
   category: 'エコノミー / Economy',
   async execute(interaction) {
@@ -42,15 +48,13 @@ module.exports = {
 
     if (sub === 'check') {
       if (isAll) {
-        const msg = '### エラー\n全員のコインを一括で確認することはできません。';
-        const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
+        const embed = new EmbedBuilder().setColor(0xED4245).setDescription('### エラー\n全員のコインを一括で確認することはできません。');
         return interaction.reply({ embeds: [embed], ephemeral: true });
       }
 
       const user = await interaction.client.users.fetch(userInput).catch(() => null);
       if (!user) {
-        const msg = '### エラー\n有効なユーザーを指定してください。';
-        const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
+        const embed = new EmbedBuilder().setColor(0xED4245).setDescription('### エラー\n有効なユーザーを指定してください。');
         return interaction.reply({ embeds: [embed], ephemeral: true });
       }
 
@@ -68,7 +72,6 @@ module.exports = {
       const amount = interaction.options.getInteger('amount');
 
       if (isAll) {
-        // 全員対象
         const targetAmount = sub === 'remove' ? -amount : amount;
         await prisma.userActivity.updateMany({
           where: { guildId: interaction.guild.id },
@@ -80,11 +83,9 @@ module.exports = {
         const embed = new EmbedBuilder().setColor(sub === 'add' ? 0x57F287 : 0xED4245).setDescription(msg);
         await interaction.reply({ embeds: [embed] });
       } else {
-        // 個人対象
         const user = await interaction.client.users.fetch(userInput).catch(() => null);
         if (!user) {
-          const msg = '### エラー\n有効なユーザーを指定してください。';
-          const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
+          const embed = new EmbedBuilder().setColor(0xED4245).setDescription('### エラー\n有効なユーザーを指定してください。');
           return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
@@ -103,7 +104,6 @@ module.exports = {
 
     } else if (sub === 'clear') {
       if (isAll) {
-        // 全員のコインを0にする
         await prisma.userActivity.updateMany({
           where: { guildId: interaction.guild.id },
           data: { coins: 0n }
@@ -112,11 +112,9 @@ module.exports = {
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
         await interaction.reply({ embeds: [embed] });
       } else {
-        // 個人のコインを0にする
         const user = await interaction.client.users.fetch(userInput).catch(() => null);
         if (!user) {
-          const msg = '### エラー\n有効なユーザーを指定してください。';
-          const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
+          const embed = new EmbedBuilder().setColor(0xED4245).setDescription('### エラー\n有効なユーザーを指定してください。');
           return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
@@ -129,6 +127,41 @@ module.exports = {
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
         await interaction.reply({ embeds: [embed] });
       }
+
+    } else if (sub === 'panel') {
+      // パネルの設置処理
+      const title = await tGuild(interaction.guild.id, 'economy.coin_panel_title');
+      const desc = await tGuild(interaction.guild.id, 'economy.coin_panel_desc');
+      const topUsersName = await tGuild(interaction.guild.id, 'level.top_users');
+      const noData = await tGuild(interaction.guild.id, 'level.no_data');
+      
+      const topUsers = await getTopUsersByCoins(interaction.guild.id, 20);
+      const lines = topUsers.map((u, i) => `**${i + 1}.** <@${u.userId}> - **${Number(u.coins)}**`);
+
+      const embed = new EmbedBuilder()
+        .setColor(0xFEE75C)
+        .setTitle(title)
+        .setDescription(desc)
+        .addFields({ name: topUsersName, value: lines.length ? lines.join('\n') : noData })
+        .setFooter({ text: await tGuild(interaction.guild.id, 'level.last_updated') })
+        .setTimestamp();
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('coin_page_1').setLabel('‹').setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId('coin_page_2').setLabel('›').setStyle(ButtonStyle.Secondary)
+      );
+
+      const panelMessage = await interaction.channel.send({ embeds: [embed], components: [row] });
+
+      await prisma.leaderboardPanel.upsert({
+        where: { guildId_type: { guildId: interaction.guild.id, type: 'COIN' } },
+        update: { channelId: interaction.channel.id, messageId: panelMessage.id },
+        create: { guildId: interaction.guild.id, type: 'COIN', channelId: interaction.channel.id, messageId: panelMessage.id },
+      });
+
+      const successMsg = await tGuild(interaction.guild.id, 'economy.coin_panel_created');
+      const successEmbed = new EmbedBuilder().setColor(0x57F287).setDescription(successMsg);
+      await interaction.reply({ embeds: [successEmbed], ephemeral: true });
     }
   },
 };
