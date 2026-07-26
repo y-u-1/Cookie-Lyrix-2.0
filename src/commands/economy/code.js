@@ -181,7 +181,7 @@ module.exports = {
       await interaction.reply({ embeds: [embed], ephemeral: true });
 
     } else if (sub === 'delete') {
-      const code = interaction.options.getString('code');
+      const code = interaction.options.getString('code').toUpperCase();
       const deleted = await prisma.redeemCode.deleteMany({
         where: { code, guildId: interaction.guild.id },
       });

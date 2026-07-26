@@ -46,6 +46,14 @@ module.exports = {
         break;
     }
 
+    // レコードが無い(＝初回)ユーザーだと updateMany が0件ヒットで
+    // 「残高不足」と誤判定されてしまうため、先にレコードの存在を保証する。
+    await prisma.userActivity.upsert({
+      where: { guildId_userId: { guildId, userId } },
+      update: {},
+      create: { guildId, userId, coins: 3000n },
+    });
+
     // 残高チェックと増減を1つのクエリで原子的に行う(BigInt対応)。
     // 「確認→引き落とし」を別々に行うと、同時に複数回実行された場合に
     // 所持金以上を賭けられてしまう競合状態が発生する。

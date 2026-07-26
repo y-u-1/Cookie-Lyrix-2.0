@@ -1,7 +1,7 @@
 // src/commands/games/minesweeperInteractions.js
 const { EmbedBuilder } = require('discord.js');
 const { getGame, revealCell, buildBoardComponents, buildGameEmbed, deleteGame } = require('./minesweeperService');
-const { addCoins, removeCoins } = require('../../lib/levelService');
+const { addCoins } = require('../../lib/levelService');
 const { tGuild, getGuildLanguage } = require('../../lib/i18n');
 
 async function handleCellClick(interaction) {
@@ -24,16 +24,21 @@ async function handleCellClick(interaction) {
   const index = parseInt(interaction.customId.split('_')[1], 10);
   revealCell(game.state, index);
 
+  // 注: 開始時(minesweeper.js)で掛け金は既にエスクロー(引き落とし)済みのため、
+  // ここでは払い戻し分を計算してaddCoinsする。
   let coinChange = 0;
   if (game.state.status === 'WON') {
     coinChange = game.state.mines.size * 20;
     if (game.state.bet > 0) coinChange += Math.round(game.state.bet * 0.5);
-    // 勝利時はプラスなのでaddCoinsで加算
-    await addCoins(interaction.guildId, game.ownerId, coinChange).catch(() => {});
+    // 勝利: エスクロー済みの掛け金を全額払い戻し + 報酬を加算
+    const payout = game.state.bet + coinChange;
+    await addCoins(interaction.guildId, game.ownerId, payout).catch(() => {});
   } else if (game.state.status === 'LOST' && game.state.bet > 0) {
-    coinChange = -Math.ceil(game.state.bet * 0.1);
-    // 敗北時の減点はremoveCoinsを使い、残高が足りない場合でもマイナスにならないようにする
-    await removeCoins(interaction.guildId, game.ownerId, Math.abs(coinChange)).catch(() => {});
+    const penalty = Math.ceil(game.state.bet * 0.1);
+    coinChange = -penalty;
+    // 敗北: 掛け金の90%を払い戻す(10%のみ没収。差額はエスクロー時に既に引き落とし済み)
+    const refund = game.state.bet - penalty;
+    if (refund > 0) await addCoins(interaction.guildId, game.ownerId, refund).catch(() => {});
   }
 
   const lang = await getGuildLanguage(interaction.guildId);

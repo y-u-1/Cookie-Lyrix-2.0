@@ -12,6 +12,14 @@ module.exports = {
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
+    // レコードが無い(＝初回)ユーザーでも受け取れるよう、先にupsertで作成しておく。
+    // create時はlastDailyAtを設定せず、続く条件付きupdateManyで初回受け取り分を処理する。
+    await prisma.userActivity.upsert({
+      where: { guildId_userId: { guildId: interaction.guild.id, userId: interaction.user.id } },
+      update: {},
+      create: { guildId: interaction.guild.id, userId: interaction.user.id, coins: 3000n },
+    });
+
     // 条件付き更新: 前回の受け取りが24時間前より古い場合のみ成功
     const result = await prisma.userActivity.updateMany({
       where: {

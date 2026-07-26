@@ -1,7 +1,7 @@
 // src/commands/economy/code-list.js
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const { prisma } = require('../../lib/database');
-const { tGuild } = require('../../lib/i18n');
+const { t, getGuildLanguage } = require('../../lib/i18n');
 
 const PAGE_SIZE = 20;
 
@@ -18,29 +18,19 @@ module.exports = {
 };
 
 async function sendCodeListPage(interaction, page) {
-  const total = await prisma.redeemCode.count({
-    where: {
-      OR: [
-        { maxUses: 0 },
-        { uses: { lt: prisma.redeemCode.fields.maxUses } }
-      ]
-    }
+  // 「uses < maxUses」は同一行の別カラム同士の比較になるため、Prismaの
+  // fieldReference機能(previewFeatures未有効)を使わずJS側でフィルタする。
+  const allCodes = await prisma.redeemCode.findMany({
+    where: { guildId: interaction.guild.id },
+    orderBy: { createdAt: 'desc' },
   });
+  const codesAll = allCodes.filter((c) => c.maxUses === 0 || c.uses < c.maxUses);
 
+  const total = codesAll.length;
   const maxPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
   const safePage = Math.min(Math.max(0, page), maxPage);
 
-  const codes = await prisma.redeemCode.findMany({
-    where: {
-      OR: [
-        { maxUses: 0 },
-        { uses: { lt: prisma.redeemCode.fields.maxUses } }
-      ]
-    },
-    orderBy: { createdAt: 'desc' },
-    skip: safePage * PAGE_SIZE,
-    take: PAGE_SIZE,
-  });
+  const codes = codesAll.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
   const lang = await getGuildLanguage(interaction.guild.id);
   const title = t(lang, 'code.list_title');

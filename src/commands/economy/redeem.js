@@ -73,20 +73,39 @@ async function processRedeem(interaction, codeInput) {
     }
 
     try {
-      await prisma.$transaction([
-        prisma.redeemCode.updateMany({
+      // インタラクティブ・トランザクションに変更。
+      // 以前は updateMany と usage.upsert を別々の配列要素として同じ
+      // $transaction に渡していたが、updateMany が0件(＝定員/上限到達)でも
+      // upsert 側は無条件に実行されてしまい、報酬なしで使用回数だけが
+      // カウントされる不整合が起きていた。ここではブロックされた場合は
+      // upsert 自体を実行しないようにする。
+      const blocked = await prisma.$transaction(async (tx) => {
+        const codeUpdateResult = await tx.redeemCode.updateMany({
           where: {
             id: code.id,
-            OR: [{ maxUses: 0 }, { uses: { lt: code.maxUses } }]
+            OR: [{ maxUses: 0 }, { uses: { lt: code.maxUses } }],
+            usages: code.maxUsesPerUser > 0
+              ? { none: { userId: interaction.user.id, count: { gte: code.maxUsesPerUser } } }
+              : undefined,
           },
           data: { uses: { increment: 1 } }
-        }),
-        prisma.redeemCodeUsage.upsert({
+        });
+
+        if (codeUpdateResult.count === 0) return true;
+
+        await tx.redeemCodeUsage.upsert({
           where: { codeId_userId: { codeId: code.id, userId: interaction.user.id } },
           update: { count: { increment: 1 } },
           create: { codeId: code.id, userId: interaction.user.id, count: 1 }
-        })
-      ]);
+        });
+        return false;
+      });
+
+      if (blocked) {
+        const msg = await tGuild(interaction.guild.id, 'code.faster_ended');
+        const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
+        return interaction.editReply({ embeds: [embed] });
+      }
     } catch (txErr) {
       console.error('Redeem Transaction Error:', txErr);
       const msg = await tGuild(interaction.guild.id, 'code.faster_ended');

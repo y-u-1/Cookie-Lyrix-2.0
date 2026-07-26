@@ -1,7 +1,7 @@
 // src/commands/games/minesweeper.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { DIFFICULTIES, createGame, buildBoardComponents, buildGameEmbed, registerGame } = require('./minesweeperService');
-const { getCoins } = require('../../lib/levelService');
+const { prisma } = require('../../lib/database');
 const { tGuild, getGuildLanguage } = require('../../lib/i18n');
 
 module.exports = {
@@ -39,9 +39,26 @@ async function handleStart(interaction) {
   const bet = interaction.options.getInteger('bet') ?? 0;
 
   if (bet > 0) {
-    const balance = await getCoins(interaction.guildId, interaction.user.id);
-    if (balance < BigInt(bet)) {
-      const msg = await tGuild(interaction.guildId, 'gamble.insufficient_funds');
+    const guildId = interaction.guildId;
+    const userId = interaction.user.id;
+
+    // レコードが無い(＝初回)ユーザーでも判定できるよう先に存在を保証する。
+    await prisma.userActivity.upsert({
+      where: { guildId_userId: { guildId, userId } },
+      update: {},
+      create: { guildId, userId, coins: 3000n },
+    });
+
+    // 以前は残高チェックのみで、実際には掛け金を一切引き落としていなかった
+    // (勝てば無リスクでボーナスがもらえてしまう不具合)。
+    // ここで実際に賭け金をエスクロー(引き落とし)し、決着時に払い戻す方式に変更。
+    const escrow = await prisma.userActivity.updateMany({
+      where: { guildId, userId, coins: { gte: BigInt(bet) } },
+      data: { coins: { decrement: BigInt(bet) } },
+    });
+
+    if (escrow.count === 0) {
+      const msg = await tGuild(guildId, 'gamble.insufficient_funds');
       return interaction.reply({
         embeds: [new EmbedBuilder().setColor(0xb89cff).setDescription(msg)],
         ephemeral: true,

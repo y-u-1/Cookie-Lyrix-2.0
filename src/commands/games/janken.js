@@ -52,6 +52,14 @@ module.exports = {
     }
 
     if (bet > 0 && delta !== 0) {
+      // レコードが無い(＝初回)ユーザーだと updateMany が0件ヒットで
+      // 「残高不足」と誤判定されてしまうため、先にレコードの存在を保証する。
+      await prisma.userActivity.upsert({
+        where: { guildId_userId: { guildId, userId } },
+        update: {},
+        create: { guildId, userId, coins: 3000n },
+      });
+
       // 残高チェックと増減を1つの原子的クエリで行う(同時実行での過剰な賭けを防止)。
       const update = await prisma.userActivity.updateMany({
         where: { guildId, userId, coins: { gte: BigInt(bet) } },
