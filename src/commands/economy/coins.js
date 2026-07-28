@@ -48,13 +48,15 @@ module.exports = {
 
     if (sub === 'check') {
       if (isAll) {
-        const embed = new EmbedBuilder().setColor(0xED4245).setDescription('### エラー\n全員のコインを一括で確認することはできません。');
+        const msg = await tGuild(interaction.guild.id, 'economy.coins_check_bulk_error');
+        const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
         return interaction.reply({ embeds: [embed], ephemeral: true });
       }
 
       const user = await interaction.client.users.fetch(userInput).catch(() => null);
       if (!user) {
-        const embed = new EmbedBuilder().setColor(0xED4245).setDescription('### エラー\n有効なユーザーを指定してください。');
+        const msg = await tGuild(interaction.guild.id, 'error.invalid_user');
+        const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
         return interaction.reply({ embeds: [embed], ephemeral: true });
       }
 
@@ -85,7 +87,8 @@ module.exports = {
       } else {
         const user = await interaction.client.users.fetch(userInput).catch(() => null);
         if (!user) {
-          const embed = new EmbedBuilder().setColor(0xED4245).setDescription('### エラー\n有効なユーザーを指定してください。');
+          const msg = await tGuild(interaction.guild.id, 'error.invalid_user');
+          const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
           return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
@@ -114,7 +117,8 @@ module.exports = {
       } else {
         const user = await interaction.client.users.fetch(userInput).catch(() => null);
         if (!user) {
-          const embed = new EmbedBuilder().setColor(0xED4245).setDescription('### エラー\n有効なユーザーを指定してください。');
+          const msg = await tGuild(interaction.guild.id, 'error.invalid_user');
+          const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
           return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 

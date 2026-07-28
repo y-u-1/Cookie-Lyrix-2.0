@@ -2,7 +2,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { addCoins } = require('../../lib/levelService');
-const { tGuild } = require('../../lib/i18n');
+const { tGuild, t, getGuildLanguage } = require('../../lib/i18n');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -49,9 +49,11 @@ module.exports = {
         return interaction.editReply({ embeds: [embed]});
       }
 
+      const lang = await getGuildLanguage(interaction.guild.id);
       const lines = listings.map((l) => {
         const desc = l.description ? `\n> ${l.description}` : '';
-        return `**${l.name}** (ID: \`${l.id}\`)\n> 価格: ${l.price} コイン | 在庫: ${l.quantity}${desc}`;
+        const priceStock = t(lang, 'shop.price_stock_line', { price: l.price, quantity: l.quantity });
+        return `**${l.name}** (ID: \`${l.id}\`)\n> ${priceStock}${desc}`;
       });
       
       const title = await tGuild(interaction.guild.id, 'shop.list_title');

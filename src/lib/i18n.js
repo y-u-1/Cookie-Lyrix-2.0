@@ -27,6 +27,11 @@ const messages = {
     no_roles_configured: '### 設定なし\nこのカテゴリに設定されているロールはありません。\n管理者権限を持つユーザー（またはデフォルトの権限）が使用できます。',
     roles_list: '### {key} のロール一覧',
 
+    // Generic errors
+    'error.invalid_user': '### エラー\n有効なユーザーを指定してください。',
+    'error.interaction_generic': '処理中にエラーが発生しました。',
+    'error.command_generic': 'コマンドの実行中にエラーが発生しました。',
+
     // Giveaway
     'giveaway.start.invalid_duration': '### 無効な時間指定\n形式は `10m`, `1h`, `1d` のように指定してください。',
     'giveaway.start.invalid_color': '### 無効なカラーコード\n`#RRGGBB` 形式で指定してください。',
@@ -165,6 +170,20 @@ const messages = {
     'level.page': 'ページ {page}',
     'level.last_updated': '最終更新',
     'level.xp_name': 'XP',
+    'level.rank_bulk_error': '### エラー\n全員のランクカードを一括で表示することはできません。',
+    'level.addxp_success_all': '### XP付与完了\n全員に {amount} XP を付与しました。',
+    'level.addxp_success_user': '### XP付与完了\n{user} に {amount} XP を付与しました。',
+    'level.reset_success_all': '### リセット完了\n全員のレベルとXPをリセットしました。',
+    'level.reset_success_user': '### リセット完了\n{user} のレベルとXPをリセットしました。',
+    'level.levelup_role': '> 新しいロール: {roles}',
+
+    // Level Roles (レベル到達ロール)
+    'levelrole.set_success': '### 設定完了\nレベル **{level}** 到達時に {role} を付与するよう設定しました。',
+    'levelrole.remove_success': '### 削除完了\nレベル **{level}** のロール設定を削除しました。',
+    'levelrole.not_found': '### エラー\nレベル **{level}** のロール設定は見つかりませんでした。',
+    'levelrole.list_title': 'レベル到達ロール一覧',
+    'levelrole.list_empty': '設定されているレベルロールはありません。',
+    'levelrole.error_position': '### エラー\nこのロールはBotの最高ロールより上に位置しているため付与できません。Botのロールを上に移動してください。',
 
     // NG Word
     'ngword.added': '### NGワード追加\n`{word}` をNGワードに追加しました。',
@@ -200,6 +219,7 @@ const messages = {
     'economy.daily_success': '### デイリーボーナス受け取り\n2,500コインを受け取りました！\n現在の所持コイン: **{coins}**',
     'economy.daily_cooldown': '### エラー\nデイリーボーナスは1日1回のみ受け取れます。\n次回受け取りまで: <t:{timestamp}:R>',
     'economy.coins_self': '### 所持コイン\nあなたの所持コイン: **{coins}**',
+    'economy.coins_check_bulk_error': '### エラー\n全員のコインを一括で確認することはできません。',
     'economy.coins_other': '### 所持コイン\n{user} の所持コイン: **{coins}**',
     'economy.coins_added': '### コイン付与\n{user} に {amount} コインを付与しました。',
     'economy.coins_removed': '### コイン剥奪\n{user} から {amount} コインを剥奪しました。',
@@ -228,6 +248,7 @@ const messages = {
     'shop.no_listings': '### 確認結果\n現在出品されている商品はありません。',
     'shop.not_found': '### エラー\n商品が見つからないか、在庫切れです。',
     'shop.list_title': '出品一覧',
+    'shop.price_stock_line': '価格: {price} コイン | 在庫: {quantity}',
     'shop.out_of_stock': '### 在庫切れ\n商品の在庫がありません。',
 
     // Antiraid
@@ -323,6 +344,7 @@ const messages = {
     'affinity.panel_desc': '5分ごとに自動更新されます。\n現在のサーバー上位30組のカップルランキングです。',
     'affinity.top_pairs': '上位30組',
     'affinity.points_name': 'ポイント',
+    'affinity.pair_line': '**{rank}.** <@{user1}> と <@{user2}> - **{points} ポイント**',
 
     // AI
     'ai.persona_set': '### AI性格設定\nAIの性格を **{persona}** に変更しました。',
@@ -404,6 +426,11 @@ const messages = {
     role_removed: '### Role Removed\n{role} was removed from this category.',
     no_roles_configured: '### No Roles Configured\nThere are no roles configured for this category.\nUsers with Administrator (or default Discord permissions) can use it.',
     roles_list: '### Roles for {key}',
+
+    // Generic errors
+    'error.invalid_user': '### Error\nPlease specify a valid user.',
+    'error.interaction_generic': 'An error occurred while processing this action.',
+    'error.command_generic': 'An error occurred while executing the command.',
 
     // Giveaway
     'giveaway.start.invalid_duration': '### Invalid Duration\nPlease specify the format like `10m`, `1h`, `1d`.',
@@ -543,6 +570,20 @@ const messages = {
     'level.page': 'Page {page}',
     'level.last_updated': 'Last updated',
     'level.xp_name': 'XP',
+    'level.rank_bulk_error': '### Error\nYou cannot bulk-display rank cards for all members.',
+    'level.addxp_success_all': '### XP Granted\nGranted {amount} XP to everyone.',
+    'level.addxp_success_user': '### XP Granted\nGranted {amount} XP to {user}.',
+    'level.reset_success_all': '### Reset Complete\nReset level and XP for everyone.',
+    'level.reset_success_user': '### Reset Complete\nReset level and XP for {user}.',
+    'level.levelup_role': '> New role: {roles}',
+
+    // Level Roles
+    'levelrole.set_success': '### Configured\nWill grant {role} upon reaching level **{level}**.',
+    'levelrole.remove_success': '### Removed\nRemoved the role setting for level **{level}**.',
+    'levelrole.not_found': '### Error\nNo role setting found for level **{level}**.',
+    'levelrole.list_title': 'Level Role Rewards',
+    'levelrole.list_empty': 'No level roles configured.',
+    'levelrole.error_position': '### Error\nThis role is positioned above the bot\'s highest role and cannot be granted. Please move the bot\'s role higher.',
 
     // NG Word
     'ngword.added': '### NG Word Added\nAdded `{word}` to the NG word list.',
@@ -578,6 +619,7 @@ const messages = {
     'economy.daily_success': '### Daily Bonus Claimed\nYou received 2,500 coins!\nCurrent coins: **{coins}**',
     'economy.daily_cooldown': '### Error\nYou can only claim the daily bonus once per day.\nNext claim: <t:{timestamp}:R>',
     'economy.coins_self': '### Your Coins\nYou have **{coins}** coins.',
+    'economy.coins_check_bulk_error': '### Error\nYou cannot bulk-check coins for all members.',
     'economy.coins_other': '### User Coins\n{user} has **{coins}** coins.',
     'economy.coins_added': '### Coins Added\nAdded {amount} coins to {user}.',
     'economy.coins_removed': '### Coins Removed\nRemoved {amount} coins from {user}.',
@@ -606,6 +648,7 @@ const messages = {
     'shop.no_listings': '### Result\nThere are no items listed in the shop.',
     'shop.not_found': '### Error\nItem not found or out of stock.',
     'shop.list_title': 'Shop Listings',
+    'shop.price_stock_line': 'Price: {price} coins | Stock: {quantity}',
     'shop.out_of_stock': '### Out of Stock\nThis item is out of stock.',
 
     // Antiraid
@@ -701,6 +744,7 @@ const messages = {
     'affinity.panel_desc': 'Updates automatically every 5 minutes.\nTop 30 couples in this server.',
     'affinity.top_pairs': 'Top 30 Couples',
     'affinity.points_name': 'points',
+    'affinity.pair_line': '**{rank}.** <@{user1}> and <@{user2}> - **{points} points**',
 
     // AI
     'ai.persona_set': '### AI Persona Set\nAI persona has been changed to **{persona}**.',

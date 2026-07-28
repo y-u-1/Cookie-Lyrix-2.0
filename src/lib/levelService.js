@@ -28,7 +28,7 @@ async function addXp(guildId, userId, amount) {
     },
   });
 
-  return { leveledUp: newLevel > oldLevel, newLevel };
+  return { leveledUp: newLevel > oldLevel, oldLevel, newLevel };
 }
 
 async function getRank(guildId, userId) {

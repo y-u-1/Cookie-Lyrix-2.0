@@ -4,7 +4,7 @@
 const WebSocket = require('ws');
 const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const { prisma } = require('../../lib/database');
-const { tGuild } = require('../../lib/i18n');
+const { tGuild, getGuildLanguage } = require('../../lib/i18n');
 const { getScaleText } = require('../../lib/earthquakeService');
 const { buildIntensityMapImage } = require('../../lib/earthquakeMap');
 const logger = require('../../lib/logger');
@@ -51,10 +51,11 @@ async function broadcast(client, data) {
     const timeText = await tGuild(guild.guildId, 'earthquake.time');
     const epicenterText = await tGuild(guild.guildId, 'earthquake.epicenter');
     const mapCredit = await tGuild(guild.guildId, 'earthquake.map_credit');
+    const lang = await getGuildLanguage(guild.guildId);
 
     const embed = new EmbedBuilder()
       .setColor(0xED4245)
-      .setTitle(`${title} - ${scaleText} ${getScaleText(maxScale)}`)
+      .setTitle(`${title} - ${scaleText} ${getScaleText(maxScale, lang)}`)
       .addFields(
         { name: epicenterText, value: `${data.earthquake?.hypocenter?.name ?? '-'}`, inline: true },
         { name: magText, value: `${data.earthquake?.hypocenter?.magnitude ?? '-'}`, inline: true },

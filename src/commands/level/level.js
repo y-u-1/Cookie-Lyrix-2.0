@@ -2,6 +2,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { getRank, getTopUsers, addXp } = require('../../lib/levelService');
+const { applyLevelRoles } = require('../../lib/levelRoleService');
 const { renderRankCard } = require('../../lib/canvasRenderer');
 const { tGuild } = require('../../lib/i18n');
 
@@ -40,7 +41,8 @@ module.exports = {
     if (sub === 'rank') {
       const userInput = interaction.options.getString('user');
       if (userInput?.toLowerCase() === 'x') {
-        const embed = new EmbedBuilder().setColor(0xED4245).setDescription('### エラー\n全員のランクカードを一括で表示することはできません。');
+        const msg = await tGuild(interaction.guild.id, 'level.rank_bulk_error');
+        const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
         return interaction.reply({ embeds: [embed], ephemeral: true });
       }
 
@@ -103,19 +105,30 @@ module.exports = {
           where: { guildId: interaction.guild.id },
           data: { xp: { increment: BigInt(amount) } }
         });
-        const msg = `### XP付与完了\n全員に ${amount} XP を付与しました。`;
+        const msg = await tGuild(interaction.guild.id, 'level.addxp_success_all', { amount });
         const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
         await interaction.reply({ embeds: [embed] });
       } else {
         const user = await interaction.client.users.fetch(userInput).catch(() => null);
         if (!user) {
-          const embed = new EmbedBuilder().setColor(0xED4245).setDescription('### エラー\n有効なユーザーを指定してください。');
+          const msg = await tGuild(interaction.guild.id, 'error.invalid_user');
+          const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
           return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
-        await addXp(interaction.guild.id, user.id, amount);
-        const msg = `### XP付与完了\n${user.toString()} に ${amount} XP を付与しました。`;
-        const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
+        const result = await addXp(interaction.guild.id, user.id, amount);
+        let description = await tGuild(interaction.guild.id, 'level.addxp_success_user', { user: user.toString(), amount });
+
+        if (result.leveledUp) {
+          const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+          const grantedRoleIds = member ? await applyLevelRoles(member, result.newLevel).catch(() => []) : [];
+          if (grantedRoleIds.length > 0) {
+            const roleLine = await tGuild(interaction.guild.id, 'level.levelup_role', { roles: grantedRoleIds.map((id) => `<@&${id}>`).join(', ') });
+            description += `\n${roleLine}`;
+          }
+        }
+
+        const embed = new EmbedBuilder().setColor(0x57F287).setDescription(description);
         await interaction.reply({ embeds: [embed] });
       }
 
@@ -128,13 +141,14 @@ module.exports = {
           where: { guildId: interaction.guild.id },
           data: { xp: 0n, level: 0 }
         });
-        const msg = `### リセット完了\n全員のレベルとXPをリセットしました。`;
+        const msg = await tGuild(interaction.guild.id, 'level.reset_success_all');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
         await interaction.reply({ embeds: [embed] });
       } else {
         const user = await interaction.client.users.fetch(userInput).catch(() => null);
         if (!user) {
-          const embed = new EmbedBuilder().setColor(0xED4245).setDescription('### エラー\n有効なユーザーを指定してください。');
+          const msg = await tGuild(interaction.guild.id, 'error.invalid_user');
+          const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
           return interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
@@ -143,7 +157,7 @@ module.exports = {
           data: { xp: 0n, level: 0 }
         });
         
-        const msg = `### リセット完了\n${user.toString()} のレベルとXPをリセットしました。`;
+        const msg = await tGuild(interaction.guild.id, 'level.reset_success_user', { user: user.toString() });
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
         await interaction.reply({ embeds: [embed] });
       }

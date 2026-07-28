@@ -191,6 +191,17 @@ model RolePanelItem {
   @@index([panelId])
 }
 
+model LevelRole {
+  id        String   @id @default(cuid())
+  guildId   String
+  level     Int
+  roleId    String
+  createdAt DateTime @default(now())
+
+  @@unique([guildId, level])
+  @@index([guildId])
+}
+
 model Poll {
   id          String   @id @default(cuid())
   guildId     String

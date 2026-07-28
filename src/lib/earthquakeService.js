@@ -29,7 +29,21 @@ function getScaleColor(scale) {
   }
 }
 
-function getScaleText(scale) {
+function getScaleText(scale, lang = 'ja') {
+  if (lang === 'en') {
+    switch (scale) {
+      case 10: return '1';
+      case 20: return '2';
+      case 30: return '3';
+      case 40: return '4';
+      case 45: return 'Lower 5';
+      case 50: return 'Upper 5';
+      case 55: return 'Lower 6';
+      case 60: return 'Upper 6';
+      case 70: return '7';
+      default: return 'Unknown';
+    }
+  }
   switch (scale) {
     case 10: return '1';
     case 20: return '2';

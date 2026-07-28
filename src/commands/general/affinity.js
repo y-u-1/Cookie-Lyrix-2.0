@@ -1,7 +1,7 @@
 // src/commands/general/affinity.js
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { prisma } = require('../../lib/database');
-const { tGuild } = require('../../lib/i18n');
+const { tGuild, t, getGuildLanguage } = require('../../lib/i18n');
 const { getTopAffinity } = require('../../lib/levelService');
 const { joinLinesSafely } = require('../../lib/embedUtils');
 
@@ -69,8 +69,9 @@ module.exports = {
 
     } else if (sub === 'leaderboard') {
       const affinities = await getTopAffinity(interaction.guild.id, 10);
+      const lang = await getGuildLanguage(interaction.guild.id);
       const lines = affinities.map((a, i) => {
-        return `**${i + 1}.** <@${a.userId}> と <@${a.targetId}> - **${a.points} ポイント**`;
+        return t(lang, 'affinity.pair_line', { rank: i + 1, user1: a.userId, user2: a.targetId, points: a.points });
       });
 
       const title = await tGuild(interaction.guild.id, 'affinity.leaderboard_title');
@@ -89,7 +90,8 @@ module.exports = {
       const noData = await tGuild(interaction.guild.id, 'affinity.no_data');
       
       const affinities = await getTopAffinity(interaction.guild.id, 10);
-      const lines = affinities.map((a, i) => `**${i + 1}.** <@${a.userId}> と <@${a.targetId}> - **${a.points} ポイント**`);
+      const lang = await getGuildLanguage(interaction.guild.id);
+      const lines = affinities.map((a, i) => t(lang, 'affinity.pair_line', { rank: i + 1, user1: a.userId, user2: a.targetId, points: a.points }));
 
       const embed = new EmbedBuilder()
         .setColor(0xEB459E)

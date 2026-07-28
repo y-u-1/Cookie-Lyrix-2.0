@@ -1,7 +1,7 @@
 // src/commands/general/affinityInteractions.js
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getTopAffinity } = require('../../lib/levelService');
-const { tGuild } = require('../../lib/i18n');
+const { tGuild, t, getGuildLanguage } = require('../../lib/i18n');
 const { joinLinesSafely } = require('../../lib/embedUtils');
 
 const PAGE_SIZE = 10; // 1024文字制限に収まるよう、1ページあたりの表示件数を抑える
@@ -17,7 +17,8 @@ async function handlePage(interaction) {
   const lastUpdated = await tGuild(interaction.guild.id, 'level.last_updated');
 
   const affinities = await getTopAffinity(interaction.guild.id, PAGE_SIZE, offset);
-  const lines = affinities.map((a, i) => `**${offset + i + 1}.** <@${a.userId}> と <@${a.targetId}> - **${a.points} ポイント**`);
+  const lang = await getGuildLanguage(interaction.guild.id);
+  const lines = affinities.map((a, i) => t(lang, 'affinity.pair_line', { rank: offset + i + 1, user1: a.userId, user2: a.targetId, points: a.points }));
 
   const embed = new EmbedBuilder()
     .setColor(0xEB459E)

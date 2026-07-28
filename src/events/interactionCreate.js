@@ -30,6 +30,16 @@ async function safeReply(interaction, content, ephemeral = true) {
   }
 }
 
+async function localizedErrorMessage(interaction, key) {
+  try {
+    return await tGuild(interaction.guildId, key);
+  } catch (e) {
+    return key === 'error.interaction_generic'
+      ? '処理中にエラーが発生しました。'
+      : 'コマンドの実行中にエラーが発生しました。';
+  }
+}
+
 module.exports = {
   name: 'interactionCreate',
   async execute(interaction, client) {
@@ -50,7 +60,8 @@ module.exports = {
         else if (interaction.customId === 'role_panel_modal') await roleRoute(interaction);
       } catch (err) {
         console.error(`[ERROR] Interaction error (${interaction.customId}):`, err);
-        await safeReply(interaction, '処理中にエラーが発生しました。');
+        const msg = await localizedErrorMessage(interaction, 'error.interaction_generic');
+        await safeReply(interaction, msg);
       }
       return;
     }
@@ -71,7 +82,8 @@ module.exports = {
       await command.execute(interaction);
     } catch (error) {
       console.error(`[ERROR] Command execution error (${interaction.commandName}):`, error);
-      await safeReply(interaction, 'コマンドの実行中にエラーが発生しました。');
+      const msg = await localizedErrorMessage(interaction, 'error.command_generic');
+      await safeReply(interaction, msg);
     }
   },
 };

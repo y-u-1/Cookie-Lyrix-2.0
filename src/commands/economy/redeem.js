@@ -2,6 +2,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { addCoins, addXp } = require('../../lib/levelService');
+const { applyLevelRoles } = require('../../lib/levelRoleService');
 const { t, tGuild, getGuildLanguage } = require('../../lib/i18n');
 
 module.exports = {
@@ -125,8 +126,15 @@ async function processRedeem(interaction, codeInput) {
 
     // 2. XP付与
     if (code.xp) {
-      await addXp(interaction.guild.id, interaction.user.id, Number(code.xp));
+      const xpResult = await addXp(interaction.guild.id, interaction.user.id, Number(code.xp));
       rewardsText.push(`${Number(code.xp)} XP`); // Number()で変換
+
+      if (xpResult.leveledUp) {
+        const grantedRoleIds = await applyLevelRoles(interaction.member, xpResult.newLevel).catch(() => []);
+        if (grantedRoleIds.length > 0) {
+          rewardsText.push(grantedRoleIds.map((id) => `<@&${id}>`).join(', '));
+        }
+      }
     }
 
     // 3. ロール付与

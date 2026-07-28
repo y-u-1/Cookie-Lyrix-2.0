@@ -2,6 +2,7 @@
 const { EmbedBuilder } = require('discord.js');
 const { prisma } = require('../lib/database');
 const { addXp, addCoins } = require('../lib/levelService');
+const { applyLevelRoles } = require('../lib/levelRoleService');
 const { tGuild, t } = require('../lib/i18n');
 const logger = require('../lib/logger');
 
@@ -120,14 +121,23 @@ module.exports = {
     if (result.leveledUp) {
       const levelUpBonus = result.newLevel * 100;
       await addCoins(message.guild.id, message.author.id, levelUpBonus);
-      
+
+      const grantedRoleIds = await applyLevelRoles(message.member, result.newLevel).catch(() => []);
+
       const title = await t(lang, 'level.levelup_title');
       const desc = await t(lang, 'level.levelup_desc', { level: result.newLevel });
       const bonusLine = await t(lang, 'level.levelup_bonus', { coins: levelUpBonus });
+      let description = `${desc}\n${bonusLine}`;
+
+      if (grantedRoleIds.length > 0) {
+        const roleLine = await t(lang, 'level.levelup_role', { roles: grantedRoleIds.map((id) => `<@&${id}>`).join(', ') });
+        description += `\n${roleLine}`;
+      }
+
       const embed = new EmbedBuilder()
         .setColor(0x57F287)
         .setTitle(title)
-        .setDescription(`${desc}\n${bonusLine}`)
+        .setDescription(description)
         .setThumbnail(message.author.displayAvatarURL());
       
       message.channel.send({ embeds: [embed] }).catch(() => {});

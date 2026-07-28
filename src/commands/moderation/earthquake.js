@@ -1,7 +1,7 @@
 // src/commands/moderation/earthquake.js
 const { SlashCommandBuilder, ChannelType, EmbedBuilder, AttachmentBuilder, PermissionFlagsBits } = require('discord.js');
 const { prisma } = require('../../lib/database');
-const { tGuild } = require('../../lib/i18n');
+const { tGuild, getGuildLanguage } = require('../../lib/i18n');
 const { buildIntensityMapImage } = require('../../lib/earthquakeMap');
 const { getScaleText } = require('../../lib/earthquakeService');
 
@@ -52,7 +52,8 @@ module.exports = {
         create: { guildId: interaction.guild.id, earthquakeChannelId: channel.id, earthquakeMinScale: minScale },
       });
 
-      const msg = await tGuild(interaction.guild.id, 'earthquake.setup_success', { channel: channel.toString(), min_scale: getScaleText(minScale) });
+      const setupLang = await getGuildLanguage(interaction.guild.id);
+      const msg = await tGuild(interaction.guild.id, 'earthquake.setup_success', { channel: channel.toString(), min_scale: getScaleText(minScale, setupLang) });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
       await interaction.reply({ embeds: [embed], ephemeral: true });
 
@@ -98,9 +99,10 @@ module.exports = {
       const testNotice = await tGuild(interaction.guild.id, 'earthquake.test_notice');
 
       const mapCredit = await tGuild(interaction.guild.id, 'earthquake.map_credit');
+      const testLang = await getGuildLanguage(interaction.guild.id);
       const embed = new EmbedBuilder()
         .setColor(0xED4245)
-        .setTitle(`${title} - ${scaleText} ${getScaleText(sample.earthquake.maxScale)}`)
+        .setTitle(`${title} - ${scaleText} ${getScaleText(sample.earthquake.maxScale, testLang)}`)
         .setDescription(testNotice)
         .setImage('attachment://earthquake-test.png')
         .addFields(

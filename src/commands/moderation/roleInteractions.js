@@ -3,6 +3,37 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
+// パネルアイテム一覧からボタン行(ActionRow)を組み立てる。
+// 5個ごとに行を分け、最後に管理者用の「ロールを追加」ボタン行を付ける。
+function buildPanelRows(items, addButtonLabel) {
+  const rows = [];
+  let currentRow = new ActionRowBuilder();
+
+  for (let i = 0; i < items.length; i++) {
+    if (i > 0 && i % 5 === 0) {
+      rows.push(currentRow);
+      currentRow = new ActionRowBuilder();
+    }
+    currentRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`role_toggle_${items[i].id}`)
+        .setLabel(items[i].label)
+        .setStyle(ButtonStyle[items[i].style === 1 ? 'Primary' : items[i].style === 3 ? 'Success' : 'Secondary'])
+    );
+  }
+  if (items.length > 0) rows.push(currentRow);
+
+  const adminRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('role_panel_add')
+      .setLabel(addButtonLabel)
+      .setStyle(ButtonStyle.Primary)
+  );
+  rows.push(adminRow);
+
+  return rows;
+}
+
 // 「ロールを追加」ボタン -> モーダルを開く
 async function handleAddRole(interaction) {
   if (!interaction.memberPermissions.has('ManageRoles')) {
@@ -70,33 +101,8 @@ async function handleModalSubmit(interaction) {
   const message = await channel.messages.fetch(panel.messageId);
   
   const items = await prisma.rolePanelItem.findMany({ where: { panelId: panel.id } });
-  
-  const rows = [];
-  let currentRow = new ActionRowBuilder();
-  
-  for (let i = 0; i < items.length; i++) {
-    if (i > 0 && i % 5 === 0) {
-      rows.push(currentRow);
-      currentRow = new ActionRowBuilder();
-    }
-    currentRow.addComponents(
-      new ButtonBuilder()
-        .setCustomId(`role_toggle_${items[i].id}`)
-        .setLabel(items[i].label)
-        .setStyle(ButtonStyle[items[i].style === 1 ? 'Primary' : items[i].style === 3 ? 'Success' : 'Secondary'])
-    );
-  }
-  rows.push(currentRow);
-
-  // 「ロールを追加」ボタンは最後の行に維持（管理者用）
   const addButtonLabel = await tGuild(interaction.guild.id, 'role_panel.add_button_label');
-  const adminRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('role_panel_add')
-      .setLabel(addButtonLabel)
-      .setStyle(ButtonStyle.Primary)
-  );
-  rows.push(adminRow);
+  const rows = buildPanelRows(items, addButtonLabel);
 
   await message.edit({ components: rows });
   
@@ -147,4 +153,4 @@ async function route(interaction) {
   return null;
 }
 
-module.exports = { route };
+module.exports = { route, buildPanelRows };
