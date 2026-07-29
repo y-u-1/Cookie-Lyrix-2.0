@@ -214,6 +214,9 @@ const messages = {
     'earthquake.points': '各地の震度',
     'earthquake.test_notice': '### これはテスト送信です\n実際の地震情報ではありません。マップの見た目を確認するためのサンプルです。',
     'earthquake.map_credit': '地図データ: 国土地理院 地球地図日本',
+    'earthquake.unknown': '不明',
+    'earthquake.updated': '続報',
+    'earthquake.tsunami': '津波情報',
 
     // Economy
     'economy.daily_success': '### デイリーボーナス受け取り\n2,500コインを受け取りました！\n現在の所持コイン: **{coins}**',
@@ -614,6 +617,9 @@ const messages = {
     'earthquake.points': 'Points by Scale',
     'earthquake.test_notice': '### This is a test\nThis is not a real earthquake. It is a sample used to preview the map appearance.',
     'earthquake.map_credit': 'Map data: GSI Japan / Global Map Japan',
+    'earthquake.unknown': 'Unknown',
+    'earthquake.updated': 'Update',
+    'earthquake.tsunami': 'Tsunami Info',
 
     // Economy
     'economy.daily_success': '### Daily Bonus Claimed\nYou received 2,500 coins!\nCurrent coins: **{coins}**',

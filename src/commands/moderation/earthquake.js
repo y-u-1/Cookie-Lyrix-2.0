@@ -1,9 +1,9 @@
 // src/commands/moderation/earthquake.js
-const { SlashCommandBuilder, ChannelType, EmbedBuilder, AttachmentBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild, getGuildLanguage } = require('../../lib/i18n');
-const { buildIntensityMapImage } = require('../../lib/earthquakeMap');
 const { getScaleText } = require('../../lib/earthquakeService');
+const { buildEarthquakeEmbed } = require('../../lib/earthquakeEmbedBuilder');
 
 const SCALE_CHOICES = [
   { name: '震度1以上 / Scale 1+', value: 10 },
@@ -73,13 +73,16 @@ module.exports = {
       await interaction.deferReply({ ephemeral: true });
 
       const sample = {
+        id: 'test-sample',
         earthquake: {
           time: new Date().toISOString(),
           hypocenter: { name: '石川県能登地方', latitude: 37.5, longitude: 137.2, depth: '10km', magnitude: 6.5 },
           maxScale: 55,
+          domesticTsunami: 'Watch',
         },
         points: [
           { pref: '石川県', addr: '珠洲市', scale: 55, isArea: false },
+          { pref: '石川県', addr: '輪島市', scale: 55, isArea: false },
           { pref: '富山県', addr: '富山市', scale: 40, isArea: false },
           { pref: '新潟県', addr: '新潟市', scale: 30, isArea: false },
           { pref: '福井県', addr: '福井市', scale: 20, isArea: false },
@@ -87,34 +90,11 @@ module.exports = {
         ],
       };
 
-      const imageBuffer = buildIntensityMapImage({ points: sample.points, epicenter: sample.earthquake.hypocenter });
-      const attachment = new AttachmentBuilder(imageBuffer, { name: 'earthquake-test.png' });
-
-      const title = await tGuild(interaction.guild.id, 'earthquake.title');
-      const scaleText = await tGuild(interaction.guild.id, 'earthquake.scale');
-      const magText = await tGuild(interaction.guild.id, 'earthquake.magnitude');
-      const depthText = await tGuild(interaction.guild.id, 'earthquake.depth');
-      const timeText = await tGuild(interaction.guild.id, 'earthquake.time');
-      const epicenterText = await tGuild(interaction.guild.id, 'earthquake.epicenter');
       const testNotice = await tGuild(interaction.guild.id, 'earthquake.test_notice');
+      const { embed, mapAttachment } = await buildEarthquakeEmbed(interaction.guild.id, sample, false);
+      embed.setDescription(testNotice);
 
-      const mapCredit = await tGuild(interaction.guild.id, 'earthquake.map_credit');
-      const testLang = await getGuildLanguage(interaction.guild.id);
-      const embed = new EmbedBuilder()
-        .setColor(0xED4245)
-        .setTitle(`${title} - ${scaleText} ${getScaleText(sample.earthquake.maxScale, testLang)}`)
-        .setDescription(testNotice)
-        .setImage('attachment://earthquake-test.png')
-        .addFields(
-          { name: epicenterText, value: sample.earthquake.hypocenter.name, inline: true },
-          { name: magText, value: `${sample.earthquake.hypocenter.magnitude}`, inline: true },
-          { name: depthText, value: `${sample.earthquake.hypocenter.depth}`, inline: true },
-          { name: timeText, value: new Date(sample.earthquake.time).toLocaleString('ja-JP'), inline: true }
-        )
-        .setFooter({ text: mapCredit })
-        .setTimestamp();
-
-      await interaction.editReply({ embeds: [embed], files: [attachment] });
+      await interaction.editReply({ embeds: [embed], files: mapAttachment ? [mapAttachment] : [] });
     }
   },
 };

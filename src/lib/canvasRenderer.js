@@ -2,10 +2,15 @@
 const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
 
 // フォントの登録
+// 'bold'指定の描画箇所があるため、Regular(400)に加えBold(700)も正規に登録する。
+// Boldを登録せずに 'bold' を指定すると、Regularの字形を無理やり太らせた
+// 疑似ボールドになり、特に漢字部分の線が潰れて見えてしまうため。
 try {
-  const fontPath = require.resolve('@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-400-normal.woff2');
+  const regularPath = require.resolve('@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-400-normal.woff2');
+  const boldPath = require.resolve('@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-700-normal.woff2');
   if (!GlobalFonts.has('Noto Sans JP')) {
-    GlobalFonts.registerFromPath(fontPath, 'Noto Sans JP');
+    GlobalFonts.registerFromPath(regularPath, 'Noto Sans JP');
+    GlobalFonts.registerFromPath(boldPath, 'Noto Sans JP');
   }
 } catch (e) {
   console.error('Font registration failed:', e);

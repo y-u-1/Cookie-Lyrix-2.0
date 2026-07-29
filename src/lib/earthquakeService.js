@@ -58,4 +58,47 @@ function getScaleText(scale, lang = 'ja') {
   }
 }
 
-module.exports = { fetchEarthquakeData, getScaleColor, getScaleText };
+function getScaleColorInt(scale) {
+  return parseInt(getScaleColor(scale).replace('#', ''), 16);
+}
+
+/** magnitudeが-1やnull/undefinedの場合(不明)を考慮してフォーマットする */
+function formatMagnitude(magnitude) {
+  if (magnitude === null || magnitude === undefined || magnitude === -1) return null;
+  return `M${magnitude}`;
+}
+
+/**
+ * P2P地震情報APIのearthquake.domesticTsunami値をローカライズされたテキストに変換する。
+ * 値: None, Unknown, Checking, NonEffective, Watch, Warning, MajorWarning
+ * @returns {{ text: string, alert: boolean }} alertはtrueの場合、注意喚起として強調表示すべき
+ */
+function getTsunamiInfo(domesticTsunami, lang = 'ja') {
+  const table = {
+    ja: {
+      None: null, // 対象外の場合はフィールド自体を表示しない
+      Unknown: '不明（現在確認中）',
+      Checking: '調査中',
+      NonEffective: '被害の心配なし',
+      Watch: '津波注意報',
+      Warning: '津波警報',
+      MajorWarning: '大津波警報',
+    },
+    en: {
+      None: null,
+      Unknown: 'Unknown (checking)',
+      Checking: 'Checking',
+      NonEffective: 'No damage expected',
+      Watch: 'Tsunami Advisory',
+      Warning: 'Tsunami Warning',
+      MajorWarning: 'Major Tsunami Warning',
+    },
+  };
+  const dict = table[lang] ?? table.ja;
+  if (domesticTsunami === undefined || domesticTsunami === null) return { text: null, alert: false };
+  const text = Object.prototype.hasOwnProperty.call(dict, domesticTsunami) ? dict[domesticTsunami] : dict.Unknown;
+  const alert = domesticTsunami === 'Watch' || domesticTsunami === 'Warning' || domesticTsunami === 'MajorWarning';
+  return { text, alert };
+}
+
+module.exports = { fetchEarthquakeData, getScaleColor, getScaleColorInt, getScaleText, formatMagnitude, getTsunamiInfo };

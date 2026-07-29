@@ -6,10 +6,16 @@ const path = require('path');
 const { createCanvas, GlobalFonts } = require('@napi-rs/canvas');
 
 // フォントの登録(他のモジュールで既に登録済みでも安全に呼べる)
+// 震度ラベルは太字で表示するため、正規のBold(700)ウェイトも登録する。
+// これを登録せずに ctx.font = 'bold ...' を指定すると、
+// レギュラー(400)の字形を無理やり太らせた「疑似ボールド」になり、
+// 特に漢字部分の線が潰れて見えることがあるため。
 try {
-  const fontPath = require.resolve('@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-400-normal.woff2');
+  const regularPath = require.resolve('@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-400-normal.woff2');
+  const boldPath = require.resolve('@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-700-normal.woff2');
   if (!GlobalFonts.has('Noto Sans JP')) {
-    GlobalFonts.registerFromPath(fontPath, 'Noto Sans JP');
+    GlobalFonts.registerFromPath(regularPath, 'Noto Sans JP');
+    GlobalFonts.registerFromPath(boldPath, 'Noto Sans JP');
   }
 } catch (e) {
   console.error('Font registration failed (earthquakeMap):', e);
@@ -40,6 +46,21 @@ const SCALE_INFO = {
 const NO_DATA_COLOR = '#3A3A4A';
 const BG_COLOR = '#1E1E2E';
 const BORDER_COLOR = 'rgba(255,255,255,0.35)';
+
+// scale値を震度の強い順に並べたもの(ズーム対象の判定に使う)
+const SCALE_STEPS = [10, 20, 30, 40, 45, 50, 55, 60, 70];
+
+/**
+ * 最大震度から「ズームの中心とすべき、強く揺れた地域」の閾値を求める。
+ * 最大震度から3段階下までを目安にすることで、全国的に体感された弱い揺れの
+ * 都道府県まで拾ってしまい、肝心の震源周辺が縮小されすぎるのを防ぐ。
+ */
+function getFocusScaleThreshold(maxScale) {
+  const idx = SCALE_STEPS.indexOf(maxScale);
+  if (idx === -1) return SCALE_STEPS[0];
+  const targetIdx = Math.max(0, idx - 3);
+  return SCALE_STEPS[targetIdx];
+}
 
 function scaleInfo(scale) {
   return SCALE_INFO[scale] ?? { label: '?', color: NO_DATA_COLOR };
@@ -115,11 +136,23 @@ function buildIntensityMapImage({ points, epicenter }) {
   const height = 720;
   const padding = 60;
 
-  // 観測のあった都道府県＋震源のバウンディングボックスを計算し、その周辺だけをズーム表示する
+  // Discordのサムネイル表示でも文字が潰れないよう、2倍解像度(retina)でレンダリングする。
+  // 以降の描画コードは全てwidth/height(論理サイズ)の座標系のまま書けるよう、
+  // canvas自体を2倍サイズで作り、ctx.scale(2,2)で座標変換を吸収する。
+  const RENDER_SCALE = 2;
+
+  // 観測のあった都道府県＋震源のバウンディングボックスを計算し、その周辺だけをズーム表示する。
+  // ただし「震度1」など遠方の弱い体感震度まで含めてしまうと、肝心の震源周辺が
+  // 縮小されて見づらくなるため、震源に近い強い揺れの都道府県を優先してズーム範囲を決める。
+  let maxScale = -1;
+  for (const scale of prefScales.values()) if (scale > maxScale) maxScale = scale;
+  const focusThreshold = getFocusScaleThreshold(maxScale);
+
   const bbox = [Infinity, Infinity, -Infinity, -Infinity];
   let hasBBox = false;
   for (const feature of geo.features) {
-    if (!prefScales.has(feature.properties.nam_ja)) continue;
+    const scale = prefScales.get(feature.properties.nam_ja);
+    if (scale === undefined || scale < focusThreshold) continue;
     const depth = feature.geometry.type === 'MultiPolygon' ? 3 : 2;
     ringBBox(feature.geometry.coordinates, depth, bbox);
     hasBBox = true;
@@ -133,16 +166,18 @@ function buildIntensityMapImage({ points, epicenter }) {
   }
   if (!hasBBox) return null;
 
-  // マージンを追加(周辺の県も見えるように広めに取る)
-  const marginLng = Math.max((bbox[2] - bbox[0]) * 0.6, 1.5);
-  const marginLat = Math.max((bbox[3] - bbox[1]) * 0.6, 1.5);
+  // マージンを追加(周辺の県も見えるように、ただし広げすぎない範囲で)
+  const marginLng = Math.max((bbox[2] - bbox[0]) * 0.5, 1.2);
+  const marginLat = Math.max((bbox[3] - bbox[1]) * 0.5, 1.2);
   bbox[0] -= marginLng;
   bbox[1] -= marginLat;
   bbox[2] += marginLng;
   bbox[3] += marginLat;
 
-  const canvas = createCanvas(width, height);
+
+  const canvas = createCanvas(width * RENDER_SCALE, height * RENDER_SCALE);
   const ctx = canvas.getContext('2d');
+  ctx.scale(RENDER_SCALE, RENDER_SCALE);
   ctx.fillStyle = BG_COLOR;
   ctx.fillRect(0, 0, width, height);
 
@@ -194,7 +229,7 @@ function buildIntensityMapImage({ points, epicenter }) {
   }
 
   // 震度ラベルを描画
-  ctx.font = '600 26px "Noto Sans JP"';
+  ctx.font = '700 26px "Noto Sans JP"';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (const { x, y, scale } of labelPositions) {
@@ -230,7 +265,44 @@ function buildIntensityMapImage({ points, epicenter }) {
     ctx.stroke();
   }
 
+  // 色の凡例を右下に表示
+  drawLegend(ctx, width, height);
+
   return canvas.toBuffer('image/png');
+}
+
+// 画面右下に震度階級の色凡例を表示する(読みやすさ向上のため)
+function drawLegend(ctx, width, height) {
+  const entries = Object.entries(SCALE_INFO);
+  const boxSize = 18;
+  const gap = 5;
+  const rowH = boxSize + gap;
+  const legendW = 78;
+  const legendH = entries.length * rowH + gap;
+  const startX = width - legendW - 16;
+  const startY = height - legendH - 16;
+
+  // 背景パネル(半透明)
+  ctx.fillStyle = 'rgba(20,20,30,0.55)';
+  ctx.beginPath();
+  ctx.roundRect(startX - 10, startY - 8, legendW + 20, legendH + 16, 8);
+  ctx.fill();
+
+  ctx.font = '700 13px "Noto Sans JP"';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+
+  entries.forEach(([, info], i) => {
+    const y = startY + gap + i * rowH;
+    ctx.fillStyle = info.color;
+    ctx.fillRect(startX, y, boxSize, boxSize);
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(startX, y, boxSize, boxSize);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(info.label, startX + boxSize + 6, y + boxSize / 2 + 1);
+  });
 }
 
 module.exports = { buildIntensityMapImage, parseCoord };
