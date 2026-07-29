@@ -101,4 +101,17 @@ function getTsunamiInfo(domesticTsunami, lang = 'ja') {
   return { text, alert };
 }
 
-module.exports = { fetchEarthquakeData, getScaleColor, getScaleColorInt, getScaleText, formatMagnitude, getTsunamiInfo };
+/**
+ * 緊急地震速報(EEW)の地域ごとの予測震度(scaleFrom〜scaleTo)を文字列にする。
+ * scaleTo=99は「~程度以上」を意味する特殊値。
+ */
+function formatScaleRange(scaleFrom, scaleTo, lang = 'ja') {
+  const overText = lang === 'en' ? ' or more' : '程度以上';
+  const unknownText = lang === 'en' ? 'Unknown' : '不明';
+  if (scaleFrom === -1 || scaleFrom === undefined) return unknownText;
+  if (scaleTo === 99) return `${getScaleText(scaleFrom, lang)}${overText}`;
+  if (scaleFrom === scaleTo) return getScaleText(scaleFrom, lang);
+  return `${getScaleText(scaleFrom, lang)}\u2013${getScaleText(scaleTo, lang)}`;
+}
+
+module.exports = { fetchEarthquakeData, getScaleColor, getScaleColorInt, getScaleText, formatMagnitude, getTsunamiInfo, formatScaleRange };

@@ -73,19 +73,18 @@ function buildCellButton(state, index) {
   if (gameOver && isMine) {
     const wasClicked = index === state.clickedMine;
     return btn
-      .setEmoji(wasClicked ? '💥' : '💣')
+      .setLabel(wasClicked ? 'X' : 'M')
       .setStyle(wasClicked ? ButtonStyle.Danger : ButtonStyle.Secondary)
       .setDisabled(true);
   }
 
   if (isRevealed) {
     const count = countAdjacentMines(index, state.rows, state.cols, state.mines);
-    if (count > 0) btn.setLabel(String(count));
-    else btn.setEmoji('⬛');
+    btn.setLabel(count > 0 ? String(count) : '\u25A0'); // ■ (開いた安全マス)
     return btn.setStyle(ButtonStyle.Success).setDisabled(true);
   }
 
-  return btn.setEmoji('⬜').setStyle(ButtonStyle.Secondary).setDisabled(gameOver);
+  return btn.setLabel('\u25A1').setStyle(ButtonStyle.Secondary).setDisabled(gameOver); // □ (未開封マス)
 }
 
 function buildBoardComponents(state) {

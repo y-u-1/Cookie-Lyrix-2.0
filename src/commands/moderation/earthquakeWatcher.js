@@ -6,9 +6,13 @@
 // - 同一地震(id)の続報/訂正が来た場合、新規メッセージを乱立させず既存メッセージを編集する
 // - 津波情報・最大震度観測地点・震度に応じたEmbed色など、表示内容を強化(共通ビルダーに集約)
 // - WebSocketの無応答を検知して自動再接続するping/pong監視(ウォッチドッグ)を追加
+// 2026-07-29 品質改善:
+// - 緊急地震速報(警報/EEW, code: 556)に対応。地震情報(551)と同様に
+//   同一イベント(issue.eventId)の続報(serial更新)は既存メッセージを編集し、
+//   取消(cancelled)が届いた場合もその旨に更新する。
 const WebSocket = require('ws');
 const { prisma } = require('../../lib/database');
-const { buildEarthquakeEmbed } = require('../../lib/earthquakeEmbedBuilder');
+const { buildEarthquakeEmbed, buildEEWEmbed } = require('../../lib/earthquakeEmbedBuilder');
 const logger = require('../../lib/logger');
 
 const WS_URL = 'wss://api.p2pquake.net/v2/ws';
@@ -89,6 +93,63 @@ async function broadcast(client, data) {
   }
 }
 
+async function broadcastEEW(client, data) {
+  cleanupOldEvents();
+
+  // areas[]の中から最も高い予測震度(scaleFrom)を探し、ギルドのしきい値判定に使う
+  const areas = data.areas ?? [];
+  let worstScaleFrom = -1;
+  for (const a of areas) {
+    if (typeof a.scaleFrom === 'number' && a.scaleFrom > worstScaleFrom) worstScaleFrom = a.scaleFrom;
+  }
+
+  // eventId(同一地震の識別子。serialが増える度に続報が来る)で追跡する。
+  // dataの直下のidではなく issue.eventId を使う点が地震情報(551)と異なる。
+  const eventId = data.issue?.eventId ?? null;
+  const trackingKey = eventId ? `eew:${eventId}` : null;
+  const isCorrection = trackingKey ? sentMessages.has(trackingKey) : false;
+
+  const guilds = await prisma.guildSettings.findMany({
+    where: { earthquakeChannelId: { not: null } },
+  });
+  if (guilds.length === 0) return;
+
+  for (const guild of guilds) {
+    // キャンセル済みイベントは、そもそも一度も送っていなければ何もしない(送信済みの場合のみ取消表示に更新する)
+    const existing = isCorrection ? sentMessages.get(trackingKey)?.get(guild.guildId) : null;
+    if (!data.cancelled && worstScaleFrom < guild.earthquakeMinScale && !existing) continue;
+
+    try {
+      const { embed, mapAttachment } = await buildEEWEmbed(guild.guildId, data, !!existing);
+
+      if (existing) {
+        const channel = await client.channels.fetch(existing.channelId).catch(() => null);
+        const message = channel ? await channel.messages.fetch(existing.messageId).catch(() => null) : null;
+
+        if (message) {
+          await message
+            .edit({ embeds: [embed], files: mapAttachment ? [mapAttachment] : [] })
+            .catch(() => {});
+          continue;
+        }
+      }
+
+      const channel = await client.channels.fetch(guild.earthquakeChannelId).catch(() => null);
+      if (!channel) continue;
+
+      const sent = await channel
+        .send({ embeds: [embed], files: mapAttachment ? [mapAttachment] : [] })
+        .catch(() => null);
+
+      if (sent && trackingKey) {
+        rememberSentMessage(trackingKey, guild.guildId, channel.id, sent.id);
+      }
+    } catch (err) {
+      logger.error(`緊急地震速報の送信に失敗しました (guild: ${guild.guildId}):`, err);
+    }
+  }
+}
+
 function startEarthquakeWatcher(client) {
   let ws;
   let reconnectTimer = null;
@@ -134,7 +195,8 @@ function startEarthquakeWatcher(client) {
     ws.on('message', async (raw) => {
       try {
         const data = JSON.parse(raw.toString());
-        if (data.code === 551) await broadcast(client, data); // 551: 地震情報
+        if (data.code === 551) await broadcast(client, data);      // 551: 地震情報
+        else if (data.code === 556) await broadcastEEW(client, data); // 556: 緊急地震速報(警報)
       } catch (err) {
         logger.error('地震速報の処理エラー:', err);
       }
@@ -159,4 +221,4 @@ function startEarthquakeWatcher(client) {
   connect();
 }
 
-module.exports = { startEarthquakeWatcher };
+module.exports = { startEarthquakeWatcher, broadcast, broadcastEEW };

@@ -218,6 +218,14 @@ const messages = {
     'earthquake.updated': '続報',
     'earthquake.tsunami': '津波情報',
 
+    // EEW (緊急地震速報)
+    'eew.title': '緊急地震速報',
+    'eew.max_scale': '最大予測震度',
+    'eew.origin_time': '発生時刻',
+    'eew.areas_field': '地域ごとの予測震度',
+    'eew.cancelled': '取消',
+    'eew.disclaimer': 'この情報は速報値であり、内容・品質は保証されません。正式な情報は気象庁の発表をご確認ください。',
+
     // Economy
     'economy.daily_success': '### デイリーボーナス受け取り\n2,500コインを受け取りました！\n現在の所持コイン: **{coins}**',
     'economy.daily_cooldown': '### エラー\nデイリーボーナスは1日1回のみ受け取れます。\n次回受け取りまで: <t:{timestamp}:R>',
@@ -232,6 +240,7 @@ const messages = {
     'economy.coins_cleared_all': '### コイン全削除\n全員のコインを0にしました。',
     'economy.coin_panel_created': '### コインリーダーボード作成\nこのチャンネルに5分ごとに更新されるコインランキングを作成しました。',
     'economy.coin_panel_title': 'コインランキング',
+    'economy.coin_leaderboard_title': 'コインランキング',
     'economy.coin_panel_desc': '5分ごとに自動更新されます。\n現在のサーバー上位30名のコインランキングです。',
     'economy.coin_name': 'コイン',
     
@@ -364,6 +373,8 @@ const messages = {
     'role_panel.item_added': '### ロール追加完了\nパネルにロールを追加しました。',
     'role_panel.add_button_label': 'ロールを追加',
     'role_panel.item_not_found': '### エラー\nロールが見つかりません。',
+    'role_panel.role_field': 'ロール',
+    'role_panel.grant_button_label': '{role} を付与',
 
     // Verify (追加インタラクション用)
     'verify.panel_not_found': '### エラー\nパネルが見つかりません。',
@@ -385,6 +396,8 @@ const messages = {
     'shop.footer_wait': '商品が購入されるのをお待ちください',
     'shop.listed_detail': '> ID: `{id}`\n> 在庫: {quantity}',
     'shop.seller_notification': '### 商品が購入されました\nあなたの商品 **{name}** が {buyer} によって {price} コインで購入されました。',
+    'shop.deleted': '### 削除完了\n**{name}** の出品を削除しました。',
+    'shop.delete_no_permission': '### エラー\n出品者本人、またはサーバー管理権限を持つユーザーのみ削除できます。',
 
     // Antiraid (追加)
     'antiraid.enabled_detail': '> 閾値: {threshold}人 / {windowSec}秒',
@@ -621,6 +634,14 @@ const messages = {
     'earthquake.updated': 'Update',
     'earthquake.tsunami': 'Tsunami Info',
 
+    // EEW (Earthquake Early Warning)
+    'eew.title': 'Earthquake Early Warning',
+    'eew.max_scale': 'Max Predicted Intensity',
+    'eew.origin_time': 'Origin Time',
+    'eew.areas_field': 'Predicted Intensity by Area',
+    'eew.cancelled': 'Cancelled',
+    'eew.disclaimer': 'This is a preliminary estimate; content and quality are not guaranteed. Check the JMA for official information.',
+
     // Economy
     'economy.daily_success': '### Daily Bonus Claimed\nYou received 2,500 coins!\nCurrent coins: **{coins}**',
     'economy.daily_cooldown': '### Error\nYou can only claim the daily bonus once per day.\nNext claim: <t:{timestamp}:R>',
@@ -635,6 +656,7 @@ const messages = {
     'economy.coins_cleared_all': '### Coins Cleared\nAll users\' coins have been set to 0.',
     'economy.coin_panel_created': '### Coin Leaderboard Created\nA coin leaderboard that updates every 5 minutes has been created in this channel.',
     'economy.coin_panel_title': 'Coin Leaderboard',
+    'economy.coin_leaderboard_title': 'Coin Leaderboard',
     'economy.coin_panel_desc': 'Updates automatically every 5 minutes.\nTop 30 users in this server.',
     'economy.coin_name': 'coins',
 
@@ -767,6 +789,8 @@ const messages = {
     'role_panel.item_added': '### Role Added\nAdded the role to the panel.',
     'role_panel.add_button_label': 'Add Role',
     'role_panel.item_not_found': '### Error\nRole not found.',
+    'role_panel.role_field': 'Role',
+    'role_panel.grant_button_label': 'Grant {role}',
 
     // Verify (additional interactions)
     'verify.panel_not_found': '### Error\nPanel not found.',
@@ -788,6 +812,8 @@ const messages = {
     'shop.footer_wait': 'Please wait for your item to be purchased',
     'shop.listed_detail': '> ID: `{id}`\n> Stock: {quantity}',
     'shop.seller_notification': '### Item Sold\nYour item **{name}** was purchased by {buyer} for {price} coins.',
+    'shop.deleted': '### Deleted\nListing for **{name}** has been deleted.',
+    'shop.delete_no_permission': '### Error\nOnly the seller or a user with Manage Server permission can delete this listing.',
 
     // Antiraid (additional)
     'antiraid.enabled_detail': '> Threshold: {threshold} users / {windowSec}s',

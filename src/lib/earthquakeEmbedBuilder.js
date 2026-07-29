@@ -4,11 +4,12 @@
 // 表示内容が食い違わないようにする。
 const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const { tGuild, getGuildLanguage } = require('./i18n');
-const { getScaleText, getScaleColorInt, formatMagnitude, getTsunamiInfo } = require('./earthquakeService');
+const { getScaleText, getScaleColorInt, formatMagnitude, getTsunamiInfo, formatScaleRange } = require('./earthquakeService');
 const { buildIntensityMapImage } = require('./earthquakeMap');
 const logger = require('./logger');
 
 const MAX_OBSERVATION_POINTS = 5;
+const MAX_EEW_AREAS = 8;
 
 /** points/hypocenterから震度分布マップ画像(AttachmentBuilder)を作る。データ不足時はnull。 */
 function buildMapAttachment(data) {
@@ -83,7 +84,7 @@ async function buildEarthquakeEmbed(guildId, data, isUpdate = false) {
   if (tsunami.text) {
     const tsunamiLabel = await tGuild(guildId, 'earthquake.tsunami');
     embed.spliceFields(1, 0, {
-      name: tsunami.alert ? `⚠️ ${tsunamiLabel}` : tsunamiLabel,
+      name: tsunami.alert ? `**${tsunamiLabel}**` : tsunamiLabel,
       value: tsunami.text,
       inline: true,
     });
@@ -102,4 +103,88 @@ async function buildEarthquakeEmbed(guildId, data, isUpdate = false) {
   return { embed, mapAttachment };
 }
 
-module.exports = { buildEarthquakeEmbed, buildMapAttachment };
+/**
+ * 緊急地震速報(警報)(P2P地震情報APIのcode: 556)からEmbedを組み立てる。
+ * 観測点データが無いため、震度分布マップの代わりに震源位置だけを示す簡易マップを使う。
+ * @param {string} guildId
+ * @param {object} data - EEWイベントデータ
+ * @param {boolean} isUpdate - 同一イベントの続報(serial更新)の場合
+ * @returns {Promise<{ embed: EmbedBuilder, mapAttachment: AttachmentBuilder|null }>}
+ */
+async function buildEEWEmbed(guildId, data, isUpdate = false) {
+  const lang = await getGuildLanguage(guildId);
+  const title = await tGuild(guildId, 'eew.title');
+  const updatedLabel = isUpdate ? ` (${await tGuild(guildId, 'earthquake.updated')})` : '';
+  const disclaimerText = await tGuild(guildId, 'eew.disclaimer');
+
+  if (data.cancelled) {
+    const cancelledLabel = await tGuild(guildId, 'eew.cancelled');
+    const embed = new EmbedBuilder()
+      .setColor(0x99AAB5)
+      .setTitle(`${title}${updatedLabel} - ${cancelledLabel}`)
+      .setFooter({ text: disclaimerText })
+      .setTimestamp();
+    return { embed, mapAttachment: null };
+  }
+
+  const unknownText = await tGuild(guildId, 'earthquake.unknown');
+  const epicenterText = await tGuild(guildId, 'earthquake.epicenter');
+  const magText = await tGuild(guildId, 'earthquake.magnitude');
+  const originTimeText = await tGuild(guildId, 'eew.origin_time');
+  const areasText = await tGuild(guildId, 'eew.areas_field');
+  const maxScaleLabelText = await tGuild(guildId, 'eew.max_scale');
+
+  const hypocenter = data.earthquake?.hypocenter;
+  const magnitude = formatMagnitude(hypocenter?.magnitude);
+  const hypocenterName = hypocenter?.name || unknownText;
+  const originTime = data.earthquake?.originTime ? new Date(data.earthquake.originTime).toLocaleString('ja-JP') : '-';
+
+  // areas[]の中から、予測震度が最も高い地域を探す(タイトル・色に使う代表値)
+  const areas = data.areas ?? [];
+  let worstScaleFrom = -1;
+  let worstArea = null;
+  for (const a of areas) {
+    if (typeof a.scaleFrom === 'number' && a.scaleFrom > worstScaleFrom) {
+      worstScaleFrom = a.scaleFrom;
+      worstArea = a;
+    }
+  }
+  const maxScaleLabel = worstArea ? formatScaleRange(worstArea.scaleFrom, worstArea.scaleTo, lang) : unknownText;
+
+  const embed = new EmbedBuilder()
+    .setColor(getScaleColorInt(worstScaleFrom))
+    .setTitle(`${title} - ${maxScaleLabelText} ${maxScaleLabel}${updatedLabel}`)
+    .addFields(
+      { name: epicenterText, value: hypocenterName, inline: true },
+      { name: magText, value: magnitude ?? unknownText, inline: true },
+      { name: originTimeText, value: originTime, inline: true }
+    );
+
+  // 予測震度が高い順に地域を並べて表示
+  const sortedAreas = [...areas]
+    .sort((a, b) => (b.scaleFrom ?? -1) - (a.scaleFrom ?? -1))
+    .slice(0, MAX_EEW_AREAS);
+
+  if (sortedAreas.length > 0) {
+    const lines = sortedAreas.map((a) => `${a.name}: ${formatScaleRange(a.scaleFrom, a.scaleTo, lang)}`);
+    embed.addFields({ name: areasText, value: lines.join('\n'), inline: false });
+  }
+
+  // 観測点データが無いため、震源位置の目安として簡易マップを表示する(震度の色分けは行わない)
+  let mapAttachment = null;
+  if (hypocenter && hypocenter.latitude !== -200 && hypocenter.longitude !== -200) {
+    try {
+      const buf = buildIntensityMapImage({ points: [], epicenter: hypocenter });
+      if (buf) mapAttachment = new AttachmentBuilder(buf, { name: 'eew-map.png' });
+    } catch (err) {
+      logger.error('EEWマップの生成に失敗しました:', err);
+    }
+  }
+  if (mapAttachment) embed.setImage(`attachment://${mapAttachment.name}`);
+
+  embed.setFooter({ text: disclaimerText }).setTimestamp();
+
+  return { embed, mapAttachment };
+}
+
+module.exports = { buildEarthquakeEmbed, buildEEWEmbed, buildMapAttachment };

@@ -62,7 +62,7 @@ module.exports = {
       
       const embed = new EmbedBuilder()
         .setColor(0x5865F2)
-        .setTitle(`📊 ${question}`)
+        .setTitle(question)
         .setDescription(pollDesc) // 固定テキストから変数に変更
         .setFooter({ text: `${hostText}: ${interaction.user.tag}` })
         .setTimestamp();

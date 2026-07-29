@@ -1,5 +1,5 @@
 // src/commands/economy/shop.js
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { addCoins } = require('../../lib/levelService');
 const { tGuild, t, getGuildLanguage } = require('../../lib/i18n');
@@ -28,6 +28,12 @@ module.exports = {
       sub
         .setName('buy')
         .setDescription('アイテムを購入 / Buy an item')
+        .addStringOption((opt) => opt.setName('id').setDescription('商品ID / Item ID').setRequired(true))
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName('delete')
+        .setDescription('出品を削除 (出品者本人または管理者) / Delete a listing (seller or admin)')
         .addStringOption((opt) => opt.setName('id').setDescription('商品ID / Item ID').setRequired(true))
     ),
   category: 'エコノミー / Economy',
@@ -160,6 +166,31 @@ module.exports = {
           .setDescription(sellerMsg);
         await seller.send({ embeds: [sellerEmbed] });
       } catch (e) {}
+
+    } else if (sub === 'delete') {
+      const id = interaction.options.getString('id');
+      const listing = await prisma.privateShopListing.findUnique({ where: { id } });
+
+      if (!listing || listing.guildId !== interaction.guild.id) {
+        const msg = await tGuild(interaction.guild.id, 'shop.not_found');
+        const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
+        return interaction.editReply({ embeds: [embed] });
+      }
+
+      const isOwner = listing.sellerId === interaction.user.id;
+      const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.ManageGuild);
+
+      if (!isOwner && !isAdmin) {
+        const msg = await tGuild(interaction.guild.id, 'shop.delete_no_permission');
+        const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
+        return interaction.editReply({ embeds: [embed] });
+      }
+
+      await prisma.privateShopListing.delete({ where: { id } });
+
+      const msg = await tGuild(interaction.guild.id, 'shop.deleted', { name: listing.name });
+      const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
+      await interaction.editReply({ embeds: [embed] });
     }
   },
 };

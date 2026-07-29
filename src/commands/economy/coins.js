@@ -34,6 +34,11 @@ module.exports = {
         .setDescription('コインを全削除 (管理者のみ) / Clear coins (Admin only)')
         .addStringOption((opt) => opt.setName('user').setDescription('対象ユーザー または x (全員) / User or x (all)').setRequired(true))
     )
+    .addSubcommand((sub) =>
+      sub
+        .setName('leaderboard')
+        .setDescription('コインランキングを表示 / Show the coin leaderboard')
+    )
     // ↓ ここからが復活した panel サブコマンドです
     .addSubcommand((sub) =>
       sub
@@ -131,6 +136,20 @@ module.exports = {
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
         await interaction.reply({ embeds: [embed] });
       }
+
+    } else if (sub === 'leaderboard') {
+      const title = await tGuild(interaction.guild.id, 'economy.coin_leaderboard_title');
+      const noData = await tGuild(interaction.guild.id, 'level.no_data');
+
+      const topUsers = await getTopUsersByCoins(interaction.guild.id, 10);
+      const lines = topUsers.map((u, i) => `**${i + 1}.** <@${u.userId}> - **${Number(u.coins)}**`);
+
+      const embed = new EmbedBuilder()
+        .setColor(0xFEE75C)
+        .setTitle(title)
+        .setDescription(lines.length ? lines.join('\n') : noData);
+
+      await interaction.reply({ embeds: [embed] });
 
     } else if (sub === 'panel') {
       // パネルの設置処理

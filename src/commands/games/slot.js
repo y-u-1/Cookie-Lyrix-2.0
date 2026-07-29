@@ -3,14 +3,14 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
-// レア度に応じて出現率に重みをつける(💎は最もレア)
+// レア度に応じて出現率に重みをつける(DIAMONDが最もレア)
 const SYMBOLS = [
-  { symbol: '🍒', weight: 30 },
-  { symbol: '🍋', weight: 25 },
-  { symbol: '🍇', weight: 20 },
-  { symbol: '🔔', weight: 15 },
-  { symbol: '⭐', weight: 8 },
-  { symbol: '💎', weight: 2 },
+  { symbol: 'CHERRY', weight: 30 },
+  { symbol: 'LEMON', weight: 25 },
+  { symbol: 'GRAPE', weight: 20 },
+  { symbol: 'BELL', weight: 15 },
+  { symbol: 'STAR', weight: 8 },
+  { symbol: 'DIAMOND', weight: 2 },
 ];
 const TOTAL_WEIGHT = SYMBOLS.reduce((sum, s) => sum + s.weight, 0);
 
@@ -41,8 +41,8 @@ module.exports = {
 
     let multiplier, resultKey;
     if (reels[0] === reels[1] && reels[1] === reels[2]) {
-      multiplier = reels[0] === '💎' ? 20 : 5;
-      resultKey = reels[0] === '💎' ? 'games.slot_jackpot' : 'games.slot_win';
+      multiplier = reels[0] === 'DIAMOND' ? 20 : 5;
+      resultKey = reels[0] === 'DIAMOND' ? 'games.slot_jackpot' : 'games.slot_win';
     } else if (reels[0] === reels[1] || reels[1] === reels[2] || reels[0] === reels[2]) {
       multiplier = 2;
       resultKey = 'games.slot_win';
