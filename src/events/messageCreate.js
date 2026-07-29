@@ -112,9 +112,10 @@ module.exports = {
     }
 
     // --- XP & Coin 付与 ---
+    // クールダウン無し(意図的な仕様): メッセージを送るたびに毎回付与する。
     const xpAmount = Math.floor(Math.random() * 15) + 10;
     const coinAmount = Math.floor(Math.random() * 5) + 1;
-    
+
     const result = await addXp(message.guild.id, message.author.id, xpAmount);
     await addCoins(message.guild.id, message.author.id, coinAmount);
 
