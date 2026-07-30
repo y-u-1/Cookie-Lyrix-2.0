@@ -41,10 +41,18 @@ async function handleVote(interaction) {
   }
 
   // ボタンのラベル（票数）を更新
+  // 上のcreate/deleteで投票内容が変わった後なので、ボタン表示用のデータは
+  // 再取得する(投票前に取得したoption.poll.optionsのままだと、変更前の
+  // 票数のままボタンに表示されてしまう=1票ずれた表示になるバグがあった)。
+  const freshPoll = await prisma.poll.findUnique({
+    where: { id: option.poll.id },
+    include: { options: { include: { votes: true } } },
+  });
+
   const rows = [];
   let currentRow = new ActionRowBuilder();
   
-  option.poll.options.forEach((opt, index) => {
+  freshPoll.options.forEach((opt, index) => {
     if (index > 0 && index % 5 === 0) {
       rows.push(currentRow);
       currentRow = new ActionRowBuilder();

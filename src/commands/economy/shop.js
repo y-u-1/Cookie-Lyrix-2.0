@@ -46,7 +46,7 @@ module.exports = {
 
     if (sub === 'list') {
       const listings = await prisma.privateShopListing.findMany({
-        where: { guildId: interaction.guild.id, active: true, quantity: { gt: 0 } },
+        where: { guildId: interaction.guild.id, active: true, quantity: { gt: 0n } },
       });
 
       if (listings.length === 0) {
@@ -83,8 +83,8 @@ module.exports = {
           guildId: interaction.guild.id,
           sellerId: interaction.user.id,
           name,
-          price,
-          quantity,
+          price: BigInt(price),
+          quantity: BigInt(quantity),
           description,
           imageUrl,
           roleId: role?.id ?? null,
@@ -106,8 +106,8 @@ module.exports = {
       
       // 条件付き更新: 在庫がある場合のみ購入処理
       const updateResult = await prisma.privateShopListing.updateMany({
-        where: { id, active: true, quantity: { gt: 0 } },
-        data: { quantity: { decrement: 1 } }
+        where: { id, active: true, quantity: { gt: 0n } },
+        data: { quantity: { decrement: 1n } }
       });
 
       if (updateResult.count === 0) {
@@ -129,7 +129,7 @@ module.exports = {
 
       if (paymentResult.count === 0) {
         // 残高不足の場合、在庫を戻す
-        await prisma.privateShopListing.update({ where: { id }, data: { quantity: { increment: 1 } } });
+        await prisma.privateShopListing.update({ where: { id }, data: { quantity: { increment: 1n } } });
         const msg = await tGuild(interaction.guild.id, 'shop.insufficient_funds');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
         return interaction.editReply({ embeds: [embed]});
@@ -139,7 +139,8 @@ module.exports = {
       await addCoins(interaction.guild.id, listing.sellerId, listing.price);
 
       // 在庫0になったら非アクティブ化
-      if (listing.quantity - 1 === 0) {
+      // (listingは上のdecrementの後に取得しているため、既に減算後の在庫数を反映している)
+      if (listing.quantity === 0n) {
         await prisma.privateShopListing.update({ where: { id }, data: { active: false } });
       }
 

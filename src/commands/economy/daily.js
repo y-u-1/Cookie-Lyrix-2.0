@@ -31,7 +31,7 @@ module.exports = {
         ]
       },
       data: {
-        coins: { increment: 2500 },
+        coins: { increment: 2500n },
         lastDailyAt: now
       }
     });

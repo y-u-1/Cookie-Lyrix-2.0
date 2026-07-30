@@ -69,7 +69,8 @@ async function handleLeave(interaction) {
   const [, giveawayId] = interaction.customId.split(':');
   const giveaway = await prisma.giveaway.findUnique({ where: { id: giveawayId } });
   if (!giveaway || giveaway.status !== 'ACTIVE') {
-    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('This giveaway is no longer active.')], ephemeral: true });
+    const msg = t(lang, 'giveaway.leave.not_active');
+    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)], ephemeral: true });
   }
 
   const existing = await prisma.giveawayEntry.findUnique({
@@ -77,7 +78,8 @@ async function handleLeave(interaction) {
   });
   
   if (!existing) {
-    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('You are not entered in this giveaway.')], ephemeral: true });
+    const msg = t(lang, 'giveaway.leave.not_entered');
+    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)], ephemeral: true });
   }
 
   await prisma.giveawayEntry.delete({ where: { id: existing.id } });
@@ -103,8 +105,8 @@ async function handleParticipantsOpen(interaction) {
   const lang = await getGuildLanguage(interaction.guildId);
 
   const giveaway = await prisma.giveaway.findUnique({ where: { messageId: interaction.message.id } });
-  if (!giveaway) return interaction.editReply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('Giveaway not found.')] });
-  if (interaction.user.id !== giveaway.hostId) return interaction.editReply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('Only the host can view participants.')] });
+  if (!giveaway) return interaction.editReply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(t(lang, 'giveaway.participants.not_found'))] });
+  if (interaction.user.id !== giveaway.hostId) return interaction.editReply({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(t(lang, 'giveaway.participants.host_only'))] });
 
   const { embed, row } = await buildParticipantsPage(giveaway.id, 0, lang);
   return interaction.editReply({ embeds: [embed], components: [row] });
@@ -117,7 +119,8 @@ async function handleParticipantsPage(interaction) {
   const [, giveawayId, pageStr] = interaction.customId.split(':');
   const giveaway = await prisma.giveaway.findUnique({ where: { id: giveawayId } });
   if (!giveaway || interaction.user.id !== giveaway.hostId) {
-    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription('Only the host can view participants.')], ephemeral: true }).catch(() => {});
+    const msg = t(lang, 'giveaway.participants.host_only');
+    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)], ephemeral: true }).catch(() => {});
   }
 
   const { embed, row } = await buildParticipantsPage(giveawayId, parseInt(pageStr, 10) || 0, lang);

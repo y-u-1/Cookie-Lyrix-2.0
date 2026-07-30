@@ -1,5 +1,6 @@
 // src/lib/canvasRenderer.js
 const { createCanvas, loadImage, GlobalFonts } = require('@napi-rs/canvas');
+const { xpForNextLevel } = require('./levelService');
 
 // フォントの登録
 // 'bold'指定の描画箇所があるため、Regular(400)に加えBold(700)も正規に登録する。
@@ -73,7 +74,15 @@ async function renderRankCard(user, rankData) {
   ctx.textAlign = 'right';
   const currentXp = Number(rankData.xp); // BigIntのままだとNumberとの算術演算でエラーになるため変換
   const nextXp = Math.floor(rankData.nextLevelXp);
-  ctx.fillText(`${currentXp} / ${nextXp} XP`, 870, 110);
+
+  // レベルは「累計XPのしきい値」で決まる(sqrtカーブ)ため、
+  // 単純に currentXp / nextXp で進捗を計算すると、レベルアップ直後から
+  // いきなりバーが8割以上埋まった状態に見えてしまう(以前のバグ)。
+  // 「現在のレベルの開始地点」を差し引き、レベル内での相対的な進捗を計算する。
+  const currentLevelStartXp = Math.floor(xpForNextLevel(rankData.level - 1));
+  const xpIntoLevel = Math.max(0, currentXp - currentLevelStartXp);
+  const xpNeededForLevel = Math.max(1, nextXp - currentLevelStartXp);
+  ctx.fillText(`${xpIntoLevel} / ${xpNeededForLevel} XP`, 870, 110);
 
   // プログレスバー (紫)
   const barX = 270;
@@ -88,7 +97,7 @@ async function renderRankCard(user, rankData) {
   ctx.fill();
 
   // バーの進捗
-  const progress = nextXp > 0 ? Math.min(1, currentXp / nextXp) : 1;
+  const progress = Math.min(1, Math.max(0, xpIntoLevel / xpNeededForLevel));
   ctx.fillStyle = '#B89CFF'; // 紫色
   ctx.beginPath();
   ctx.roundRect(barX, barY, barWidth * progress, barHeight, 10);

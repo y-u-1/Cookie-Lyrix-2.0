@@ -319,6 +319,7 @@ model PrivateShopListing {
 model AntiRaidTracker {
   id        String   @id @default(cuid())
   guildId   String
+  userId    String   @default("")
   joinedAt  DateTime @default(now())
 
   @@index([guildId])

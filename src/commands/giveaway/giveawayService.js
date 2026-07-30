@@ -117,7 +117,8 @@ async function createGiveaway({ guild, channel, host, prize, winnerCount, durati
       hostId: host.id,
       endsAt,
       shortId,
-      imageUrl, thumbnailUrl, color, endColor, requiredRoleId, bypassRoleId, winnersRoleId, requiredLevel, winnersDmMessage, coinPrize
+      imageUrl, thumbnailUrl, color, endColor, requiredRoleId, bypassRoleId, winnersRoleId, requiredLevel, winnersDmMessage,
+      coinPrize: coinPrize !== null && coinPrize !== undefined ? BigInt(coinPrize) : null,
     },
   });
 
@@ -174,7 +175,13 @@ async function rerollGiveaway(client, giveawayId) {
   if (!giveaway) return { error: 'not_found' };
   if (giveaway.status !== 'ENDED') return { error: 'not_ended' };
 
-  const winnerIds = pickWeightedWinners(giveaway.entries, giveaway.winnerCount);
+  // 再抽選(reroll)なので、他に十分な参加者がいる場合は前回の当選者を除外して抽選する。
+  // (除外すると winnerCount に満たなくなる場合は、除外せず全員を対象にする)
+  const previousWinnerIds = new Set((giveaway.winnerIds ?? '').split(',').filter(Boolean));
+  const entriesExcludingPrevious = giveaway.entries.filter((e) => !previousWinnerIds.has(e.userId));
+  const pool = entriesExcludingPrevious.length >= giveaway.winnerCount ? entriesExcludingPrevious : giveaway.entries;
+
+  const winnerIds = pickWeightedWinners(pool, giveaway.winnerCount);
   await prisma.giveaway.update({ where: { id: giveaway.id }, data: { winnerIds: winnerIds.join(',') } });
   await announceResult(client, giveaway, winnerIds, { isReroll: true });
 
@@ -281,10 +288,14 @@ async function buildParticipantsPage(giveawayId, page, lang = 'ja') {
 }
 
 async function saveTemplate(guildId, name, options) {
+  const normalized = { ...options };
+  if (normalized.coinPrize !== undefined) {
+    normalized.coinPrize = normalized.coinPrize !== null ? BigInt(normalized.coinPrize) : null;
+  }
   return prisma.giveawayTemplate.upsert({
     where: { guildId_name: { guildId, name } },
-    update: { ...options },
-    create: { guildId, name, ...options },
+    update: { ...normalized },
+    create: { guildId, name, ...normalized },
   });
 }
 

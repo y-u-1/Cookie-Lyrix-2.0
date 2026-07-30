@@ -40,26 +40,41 @@ module.exports = {
     if (settings.antiraidEnabled) {
       const now = new Date();
       const windowMs = settings.antiraidJoinWindowSec * 1000;
-      
+      const windowStart = new Date(now.getTime() - windowMs);
+
+      // 以前はguildIdで絞り込まずに期限切れレコードを削除していたため、
+      // メンバー参加のたびに全ギルド分のテーブルを走査してしまっていた。
       await prisma.antiRaidTracker.deleteMany({
-        where: { joinedAt: { lt: new Date(now.getTime() - windowMs) } }
+        where: { guildId: member.guild.id, joinedAt: { lt: windowStart } }
       });
 
       await prisma.antiRaidTracker.create({
-        data: { guildId: member.guild.id }
+        data: { guildId: member.guild.id, userId: member.user.id }
       });
 
-      const count = await prisma.antiRaidTracker.count({
+      const recentJoiners = await prisma.antiRaidTracker.findMany({
         where: { guildId: member.guild.id }
       });
 
-      if (count >= settings.antiraidJoinThreshold) {
-        if (settings.antiraidAction === 'kick') {
-          await member.kick('Antiraid protection triggered.').catch(() => {});
-        } else if (settings.antiraidAction === 'timeout') {
-          await member.timeout(60 * 60 * 1000, 'Antiraid protection triggered.').catch(() => {});
+      if (recentJoiners.length >= settings.antiraidJoinThreshold) {
+        // 以前はしきい値を超えた瞬間に参加した本人だけが対象になり、
+        // その直前に参加していた大半の荒らしアカウントは何もされないまま
+        // 残ってしまっていた。ウィンドウ内で参加した全員をまとめて対象にする。
+        for (const joiner of recentJoiners) {
+          const target = await member.guild.members.fetch(joiner.userId).catch(() => null);
+          if (!target) continue;
+
+          if (settings.antiraidAction === 'kick') {
+            await target.kick('Antiraid protection triggered.').catch(() => {});
+          } else if (settings.antiraidAction === 'timeout') {
+            await target.timeout(60 * 60 * 1000, 'Antiraid protection triggered.').catch(() => {});
+          }
         }
-        
+
+        // 対処済みなので、このウィンドウの追跡はリセットする
+        // (残しておくと、以降の参加のたびに同じメンバーへ再度アクションしようとしてしまう)
+        await prisma.antiRaidTracker.deleteMany({ where: { guildId: member.guild.id } });
+
         const modLogSetting = await prisma.logChannel.findUnique({
           where: { guildId_type: { guildId: member.guild.id, type: 'moderation' } }
         });

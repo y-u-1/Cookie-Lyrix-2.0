@@ -66,7 +66,10 @@ client.on('error', (error) => {
 
 startKeepAlive('Cookie Lyrix 2.0');
 
-client.once('ready', () => {
+// 重要: discord.js v14.17以降、'ready'イベントは廃止され'clientReady'のみが発火する。
+// 'ready'のままだと、ここで登録している4つのスケジューラ(giveaway/level/earthquake/ticket)が
+// 一切起動しないまま気づかれずに動いてしまう(実際にこのバグが発生していた)。
+client.once('clientReady', () => {
   startGiveawayScheduler(client);
   startLevelScheduler(client);
   startEarthquakeWatcher(client);

@@ -93,6 +93,13 @@ module.exports = {
           const msg = await tGuild(interaction.guild.id, 'mod.error_missing_perms');
           return interaction.editReply({ content: msg });
         }
+        if (!member) {
+          // 対象がこのサーバーの現在のメンバーでない場合(既に退出済みなど)、
+          // member.kick()を呼ぶとnullのメソッド呼び出しでクラッシュしてしまうため、
+          // 分かりやすいエラーメッセージを返す。
+          const msg = await tGuild(interaction.guild.id, 'mod.error_not_a_member');
+          return interaction.editReply({ content: msg });
+        }
         await member.kick(reason);
       } else if (isBan) {
         if (!interaction.appPermissions.has(PermissionFlagsBits.BanMembers)) {
