@@ -1,4 +1,5 @@
 // src/events/interactionCreate.js
+const { MessageFlags } = require('discord.js');
 const logger = require('../lib/logger');
 const { route: giveawayRoute } = require('../commands/giveaway/giveawayInteractions');
 const { route: ticketRoute } = require('../commands/tickets/ticketInteractions');
@@ -16,14 +17,15 @@ const { tGuild } = require('../lib/i18n');
 
 async function safeReply(interaction, content, ephemeral = true) {
   try {
+    const flags = ephemeral ? MessageFlags.Ephemeral : undefined;
     if (interaction.deferred) {
       if (interaction.replied) {
-        await interaction.followUp({ content, ephemeral });
+        await interaction.followUp({ content, flags });
       } else {
         await interaction.editReply({ content });
       }
     } else if (!interaction.replied) {
-      await interaction.reply({ content, ephemeral });
+      await interaction.reply({ content, flags });
     }
   } catch (e) {
     console.error('SafeReply Error:', e);
@@ -79,7 +81,7 @@ module.exports = {
       
       if (!hasPerm) {
         const msg = await tGuild(interaction.guildId, 'no_permission');
-        return interaction.reply({ content: msg, ephemeral: true });
+        return interaction.reply({ content: msg, flags: MessageFlags.Ephemeral });
       }
 
       await command.execute(interaction);

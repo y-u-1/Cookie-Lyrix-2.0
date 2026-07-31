@@ -1,10 +1,11 @@
 // src/commands/level/level.js
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { getRank, getTopUsers, addXp } = require('../../lib/levelService');
 const { applyLevelRoles } = require('../../lib/levelRoleService');
 const { renderRankCard } = require('../../lib/canvasRenderer');
 const { tGuild } = require('../../lib/i18n');
+const { joinLinesSafely } = require('../../lib/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -43,7 +44,7 @@ module.exports = {
       if (userInput?.toLowerCase() === 'x') {
         const msg = await tGuild(interaction.guild.id, 'level.rank_bulk_error');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
 
       const user = await interaction.client.users.fetch(userInput).catch(() => null) ?? interaction.user;
@@ -75,7 +76,7 @@ module.exports = {
         .setColor(0x5865F2)
         .setTitle(title)
         .setDescription(desc)
-        .addFields({ name: topUsersName, value: lines.length ? lines.join('\n') : noData })
+        .addFields({ name: topUsersName, value: joinLinesSafely(lines) ?? noData })
         .setFooter({ text: await tGuild(interaction.guild.id, 'level.last_updated') })
         .setTimestamp();
 
@@ -112,7 +113,7 @@ module.exports = {
 
       const successMsg = await tGuild(interaction.guild.id, 'level.panel_created');
       const successEmbed = new EmbedBuilder().setColor(0x57F287).setDescription(successMsg);
-      await interaction.reply({ embeds: [successEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [successEmbed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'addxp') {
       const userInput = interaction.options.getString('user');
@@ -132,7 +133,7 @@ module.exports = {
         if (!user) {
           const msg = await tGuild(interaction.guild.id, 'error.invalid_user');
           const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-          return interaction.reply({ embeds: [embed], ephemeral: true });
+          return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
 
         const result = await addXp(interaction.guild.id, user.id, amount);
@@ -168,7 +169,7 @@ module.exports = {
         if (!user) {
           const msg = await tGuild(interaction.guild.id, 'error.invalid_user');
           const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-          return interaction.reply({ embeds: [embed], ephemeral: true });
+          return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
 
         await prisma.userActivity.updateMany({

@@ -1,5 +1,5 @@
 // src/commands/games/dice.js
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -28,13 +28,13 @@ module.exports = {
     if ((guess !== null && bet === null) || (guess === null && bet !== null)) {
       const msg = await tGuild(guildId, 'games.dice_need_both');
       const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
 
     if (guess !== null && guess > sides) {
       const msg = await tGuild(guildId, 'games.dice_guess_out_of_range', { sides });
       const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
 
     const result = Math.floor(Math.random() * sides) + 1;
@@ -62,7 +62,7 @@ module.exports = {
       if (update.count === 0) {
         const msg = await tGuild(guildId, 'gamble.insufficient_funds');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
     }
 

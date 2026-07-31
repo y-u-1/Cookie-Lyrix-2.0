@@ -1,5 +1,5 @@
 // src/commands/economy/daily.js
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -44,7 +44,7 @@ module.exports = {
       const nextClaim = new Date(new Date(activity.lastDailyAt).getTime() + 24 * 60 * 60 * 1000);
       const msg = await tGuild(interaction.guild.id, 'economy.daily_cooldown', { timestamp: Math.floor(nextClaim.getTime() / 1000) });
       const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
 
     // 成功

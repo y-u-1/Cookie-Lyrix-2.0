@@ -1,11 +1,11 @@
 // src/commands/moderation/verifyInteractions.js
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
 async function handleVerify(interaction) {
   // タイムアウト防止
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const panel = await prisma.verifyPanel.findUnique({
     where: { messageId: interaction.message.id }

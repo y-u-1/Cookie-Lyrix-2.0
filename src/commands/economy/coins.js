@@ -1,8 +1,9 @@
 // src/commands/economy/coins.js
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { getCoins, addCoins, removeCoins, getTopUsersByCoins } = require('../../lib/levelService');
 const { tGuild } = require('../../lib/i18n');
+const { joinLinesSafely } = require('../../lib/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -55,14 +56,14 @@ module.exports = {
       if (isAll) {
         const msg = await tGuild(interaction.guild.id, 'economy.coins_check_bulk_error');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
 
       const user = await interaction.client.users.fetch(userInput).catch(() => null);
       if (!user) {
         const msg = await tGuild(interaction.guild.id, 'error.invalid_user');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
 
       const coins = await getCoins(interaction.guild.id, user.id);
@@ -94,7 +95,7 @@ module.exports = {
         if (!user) {
           const msg = await tGuild(interaction.guild.id, 'error.invalid_user');
           const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-          return interaction.reply({ embeds: [embed], ephemeral: true });
+          return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'add') {
@@ -124,7 +125,7 @@ module.exports = {
         if (!user) {
           const msg = await tGuild(interaction.guild.id, 'error.invalid_user');
           const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-          return interaction.reply({ embeds: [embed], ephemeral: true });
+          return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
 
         await prisma.userActivity.updateMany({
@@ -166,7 +167,7 @@ module.exports = {
         .setColor(0xFEE75C)
         .setTitle(title)
         .setDescription(desc)
-        .addFields({ name: topUsersName, value: lines.length ? lines.join('\n') : noData })
+        .addFields({ name: topUsersName, value: joinLinesSafely(lines) ?? noData })
         .setFooter({ text: await tGuild(interaction.guild.id, 'level.last_updated') })
         .setTimestamp();
 
@@ -198,7 +199,7 @@ module.exports = {
 
       const successMsg = await tGuild(interaction.guild.id, 'economy.coin_panel_created');
       const successEmbed = new EmbedBuilder().setColor(0x57F287).setDescription(successMsg);
-      await interaction.reply({ embeds: [successEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [successEmbed], flags: MessageFlags.Ephemeral });
     }
   },
 };

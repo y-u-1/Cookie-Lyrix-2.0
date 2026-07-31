@@ -1,5 +1,5 @@
 // src/commands/general/message.js
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags } = require('discord.js');
 const { tGuild } = require('../../lib/i18n');
 
 const MAX_ATTACHMENTS = 10;
@@ -46,7 +46,7 @@ module.exports = {
     const title = interaction.options.getString('title');
     const colorInput = interaction.options.getString('color');
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     try {
       const embed = new EmbedBuilder()

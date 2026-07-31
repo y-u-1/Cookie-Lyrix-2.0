@@ -1,5 +1,5 @@
 // src/commands/moderation/channel-reset.js
-const { SlashCommandBuilder, EmbedBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ChannelType, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 const logger = require('../../lib/logger');
@@ -14,7 +14,7 @@ module.exports = {
     if (!interaction.appPermissions.has(PermissionFlagsBits.ManageChannels)) {
       const msg = await tGuild(interaction.guild.id, 'channelreset.error_perms');
       const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
 
     const oldChannel = interaction.channel;

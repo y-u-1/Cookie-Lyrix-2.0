@@ -1,5 +1,5 @@
 // src/commands/moderation/verify.js
-const { SlashCommandBuilder, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -16,7 +16,7 @@ module.exports = {
   async execute(interaction) {
     // チャンネルへのメッセージ投稿・DB書き込みの後に応答していたため、
     // 3秒のインタラクション期限に間に合わないことがあった。先にdeferする。
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const role = interaction.options.getRole('role');
     const channel = interaction.options.getChannel('channel') ?? interaction.channel;

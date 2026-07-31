@@ -2,7 +2,7 @@
 // 2026-07-29 仕様変更: パネル1つにつきロールは1つだけ。
 // パネルの構成要素は「タイトル」「ロール」「付与ボタン」の3つのみ。
 // カスタムラベル・複数ロール・後からの追加ボタンは廃止。
-const { SlashCommandBuilder, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -18,7 +18,7 @@ module.exports = {
   async execute(interaction) {
     // チャンネルへのメッセージ投稿・DB書き込みの後に応答していたため、
     // 3秒のインタラクション期限に間に合わないことがあった。先にdeferする。
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const title = interaction.options.getString('title');
     const role = interaction.options.getRole('role');

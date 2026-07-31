@@ -1,5 +1,5 @@
 // src/commands/moderation/mod.js
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 const logger = require('../../lib/logger');
@@ -33,7 +33,7 @@ module.exports = {
   category: 'モデレーション / Moderation',
   async execute(interaction) {
     // DM送信・kick/ban実行・DB書き込みなど時間のかかる処理が続くため、先にACKする。
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const sub = interaction.options.getSubcommand();
     const user = interaction.options.getUser('user');

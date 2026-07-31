@@ -1,5 +1,5 @@
 // src/commands/games/minesweeperInteractions.js
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, MessageFlags } = require('discord.js');
 const { getGame, revealCell, buildBoardComponents, buildGameEmbed, deleteGame } = require('./minesweeperService');
 const { addCoins } = require('../../lib/levelService');
 const { tGuild, getGuildLanguage } = require('../../lib/i18n');
@@ -10,14 +10,14 @@ async function handleCellClick(interaction) {
     const msg = await tGuild(interaction.guildId, 'minesweeper.expired');
     return interaction.reply({
       embeds: [new EmbedBuilder().setColor(0xb89cff).setDescription(msg)],
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
   if (interaction.user.id !== game.ownerId) {
     const msg = await tGuild(interaction.guildId, 'minesweeper.not_your_game');
     return interaction.reply({
       embeds: [new EmbedBuilder().setColor(0xb89cff).setDescription(msg)],
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 

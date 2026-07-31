@@ -1,5 +1,5 @@
 // src/commands/moderation/antiraid.js
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -37,7 +37,7 @@ module.exports = {
       const msg = await tGuild(interaction.guild.id, 'antiraid.enabled');
       const detail = await tGuild(interaction.guild.id, 'antiraid.enabled_detail', { threshold, windowSec });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(`${msg}\n${detail}`);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'disable') {
       await prisma.guildSettings.upsert({
@@ -48,7 +48,7 @@ module.exports = {
 
       const msg = await tGuild(interaction.guild.id, 'antiraid.disabled');
       const embed = new EmbedBuilder().setColor(0x5865F2).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
   },
 };

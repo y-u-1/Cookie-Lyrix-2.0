@@ -1,5 +1,5 @@
 // src/commands/giveaway/giveawayInteractions.js
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { t, tGuild, getGuildLanguage } = require('../../lib/i18n');
 const { buildActionRow, buildParticipantsPage, entryCount, checkEntryRate, checkAccountAge } = require('./giveawayService');
@@ -8,7 +8,7 @@ const DEFAULT_COLOR = 0x5865F2;
 const ERROR_COLOR = 0xED4245;
 
 async function handleEnter(interaction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const lang = await getGuildLanguage(interaction.guildId);
 
   const giveaway = await prisma.giveaway.findUnique({ where: { messageId: interaction.message.id } });
@@ -70,7 +70,7 @@ async function handleLeave(interaction) {
   const giveaway = await prisma.giveaway.findUnique({ where: { id: giveawayId } });
   if (!giveaway || giveaway.status !== 'ACTIVE') {
     const msg = t(lang, 'giveaway.leave.not_active');
-    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)], ephemeral: true });
+    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)], flags: MessageFlags.Ephemeral });
   }
 
   const existing = await prisma.giveawayEntry.findUnique({
@@ -79,7 +79,7 @@ async function handleLeave(interaction) {
   
   if (!existing) {
     const msg = t(lang, 'giveaway.leave.not_entered');
-    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)], ephemeral: true });
+    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)], flags: MessageFlags.Ephemeral });
   }
 
   await prisma.giveawayEntry.delete({ where: { id: existing.id } });
@@ -101,7 +101,7 @@ async function handleLeave(interaction) {
 }
 
 async function handleParticipantsOpen(interaction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const lang = await getGuildLanguage(interaction.guildId);
 
   const giveaway = await prisma.giveaway.findUnique({ where: { messageId: interaction.message.id } });
@@ -120,7 +120,7 @@ async function handleParticipantsPage(interaction) {
   const giveaway = await prisma.giveaway.findUnique({ where: { id: giveawayId } });
   if (!giveaway || interaction.user.id !== giveaway.hostId) {
     const msg = t(lang, 'giveaway.participants.host_only');
-    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)], ephemeral: true }).catch(() => {});
+    return interaction.followUp({ embeds: [new EmbedBuilder().setColor(ERROR_COLOR).setDescription(msg)], flags: MessageFlags.Ephemeral }).catch(() => {});
   }
 
   const { embed, row } = await buildParticipantsPage(giveawayId, parseInt(pageStr, 10) || 0, lang);

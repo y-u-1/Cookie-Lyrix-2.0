@@ -1,5 +1,5 @@
 // src/commands/moderation/tempvc.js
-const { SlashCommandBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -40,7 +40,7 @@ category: 'モデレーション / Moderation',
 
       const msg = await tGuild(interaction.guild.id, 'tempvc.setup_success', { channel: channel.toString(), category: category.name });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'disable') {
       await prisma.guildSettings.upsert({
@@ -51,7 +51,7 @@ category: 'モデレーション / Moderation',
 
       const msg = await tGuild(interaction.guild.id, 'tempvc.disabled');
       const embed = new EmbedBuilder().setColor(0x5865F2).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
   },
 };

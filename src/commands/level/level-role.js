@@ -1,5 +1,5 @@
 // src/commands/level/level-role.js
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { tGuild } = require('../../lib/i18n');
 const { setLevelRole, removeLevelRole, listLevelRoles } = require('../../lib/levelRoleService');
 
@@ -38,14 +38,14 @@ module.exports = {
       if (role.position >= interaction.guild.members.me.roles.highest.position) {
         const msg = await tGuild(interaction.guild.id, 'levelrole.error_position');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
 
       await setLevelRole(interaction.guild.id, level, role.id);
 
       const msg = await tGuild(interaction.guild.id, 'levelrole.set_success', { level, role: role.toString() });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'remove') {
       const level = interaction.options.getInteger('level');
@@ -54,12 +54,12 @@ module.exports = {
       if (result.count === 0) {
         const msg = await tGuild(interaction.guild.id, 'levelrole.not_found', { level });
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
 
       const msg = await tGuild(interaction.guild.id, 'levelrole.remove_success', { level });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'list') {
       const levelRoles = await listLevelRoles(interaction.guild.id);
@@ -73,7 +73,7 @@ module.exports = {
         .setTitle(title)
         .setDescription(lines.length ? lines.join('\n') : noData);
 
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
   },
 };

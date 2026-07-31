@@ -1,5 +1,5 @@
 // src/commands/economy/shop.js
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { addCoins } = require('../../lib/levelService');
 const { tGuild, t, getGuildLanguage } = require('../../lib/i18n');
@@ -40,9 +40,9 @@ module.exports = {
   async execute(interaction) {
     // buyサブコマンドがロール付与(Discord API)やDB操作を複数回行った後に
     // 応答していたため、先頭で一律deferしてから各処理を行う。
-    // (ephemeralはdefer時にしか指定できないため、sellのみ非公開のまま維持する)
+    // (flagsはdefer時にしか指定できないため、sellのみ非公開のまま維持する)
     const sub = interaction.options.getSubcommand();
-    await interaction.deferReply({ ephemeral: sub === 'sell' });
+    await interaction.deferReply({ flags: sub === 'sell' ? MessageFlags.Ephemeral : undefined });
 
     if (sub === 'list') {
       const listings = await prisma.privateShopListing.findMany({

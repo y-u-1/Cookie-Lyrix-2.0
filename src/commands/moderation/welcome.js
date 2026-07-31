@@ -1,5 +1,5 @@
 // src/commands/moderation/welcome.js
-const { SlashCommandBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -38,7 +38,7 @@ module.exports = {
 
       const msg = await tGuild(interaction.guild.id, 'welcome.setup_success', { channel: channel.toString() });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'set-leave') {
       await prisma.guildSettings.upsert({
@@ -49,7 +49,7 @@ module.exports = {
 
       const msg = await tGuild(interaction.guild.id, 'leave.setup_success', { channel: channel.toString() });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
   },
 };

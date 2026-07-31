@@ -1,5 +1,5 @@
 // src/commands/games/minesweeper.js
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { DIFFICULTIES, createGame, buildBoardComponents, buildGameEmbed, registerGame } = require('./minesweeperService');
 const { prisma } = require('../../lib/database');
 const { tGuild, getGuildLanguage } = require('../../lib/i18n');
@@ -61,7 +61,7 @@ async function handleStart(interaction) {
       const msg = await tGuild(guildId, 'gamble.insufficient_funds');
       return interaction.reply({
         embeds: [new EmbedBuilder().setColor(0xb89cff).setDescription(msg)],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
   }

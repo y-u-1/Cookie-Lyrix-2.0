@@ -1,5 +1,5 @@
 // src/commands/tickets/ticket.js
-const { SlashCommandBuilder, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -27,7 +27,7 @@ module.exports = {
     if (interaction.options.getSubcommand() === 'setup') {
       // チャンネルへのメッセージ投稿・DB書き込みの後に応答していたため、
       // 3秒のインタラクション期限に間に合わないことがあった。先にdeferする。
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
       const channel = interaction.options.getChannel('channel') ?? interaction.channel;
       const category = interaction.options.getChannel('category');

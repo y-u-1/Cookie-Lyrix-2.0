@@ -1,5 +1,5 @@
 // src/commands/moderation/ngword.js
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -39,7 +39,7 @@ module.exports = {
 
       const msg = await tGuild(interaction.guild.id, 'ngword.added', { word });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'remove') {
       const word = interaction.options.getString('word');
@@ -49,7 +49,7 @@ module.exports = {
 
       const msg = await tGuild(interaction.guild.id, 'ngword.removed', { word });
       const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'list') {
       const words = await prisma.ngWord.findMany({ where: { guildId: interaction.guild.id } });
@@ -64,7 +64,7 @@ module.exports = {
       }
 
       const embed = new EmbedBuilder().setColor(0x5865F2).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
   },
 };

@@ -1,5 +1,5 @@
 // src/commands/economy/code.js
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -88,12 +88,12 @@ module.exports = {
 
       if (maxUses === -1 || maxUsesPerUser === -1) {
         const errMsg = await tGuild(interaction.guild.id, 'code.invalid_uses');
-        return interaction.reply({ content: errMsg, ephemeral: true });
+        return interaction.reply({ content: errMsg, flags: MessageFlags.Ephemeral });
       }
 
       if (coins === 0 && !role && !xp && !imageUrl && !dmMessage) {
         const errMsg = await tGuild(interaction.guild.id, 'code.no_rewards');
-        return interaction.reply({ content: errMsg, ephemeral: true });
+        return interaction.reply({ content: errMsg, flags: MessageFlags.Ephemeral });
       }
 
       const code = generateCode();
@@ -121,7 +121,7 @@ module.exports = {
       const detailMsg = await tGuild(interaction.guild.id, 'code.generated_detail', { total: totalText, user: userText });
       
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(`${msg}\n${detailMsg}`);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'edit') {
       const codeInput = interaction.options.getString('code');
@@ -146,7 +146,7 @@ module.exports = {
         const parsed = await parseUses(maxUsesInput);
         if (parsed === -1) {
           const errMsg = await tGuild(interaction.guild.id, 'code.invalid_uses');
-          return interaction.reply({ content: errMsg, ephemeral: true });
+          return interaction.reply({ content: errMsg, flags: MessageFlags.Ephemeral });
         }
         data.maxUses = parsed;
       }
@@ -155,14 +155,14 @@ module.exports = {
         const parsed = await parseUses(maxUsesPerUserInput);
         if (parsed === -1) {
           const errMsg = await tGuild(interaction.guild.id, 'code.invalid_uses');
-          return interaction.reply({ content: errMsg, ephemeral: true });
+          return interaction.reply({ content: errMsg, flags: MessageFlags.Ephemeral });
         }
         data.maxUsesPerUser = parsed;
       }
 
       if (Object.keys(data).length === 0) {
         const errMsg = await tGuild(interaction.guild.id, 'code.no_edit_target');
-        return interaction.reply({ content: errMsg, ephemeral: true });
+        return interaction.reply({ content: errMsg, flags: MessageFlags.Ephemeral });
       }
 
       const updated = await prisma.redeemCode.updateMany({
@@ -173,12 +173,12 @@ module.exports = {
       if (updated.count === 0) {
         const msg = await tGuild(interaction.guild.id, 'code.not_found');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
 
       const msg = await tGuild(interaction.guild.id, 'code.edited', { code: codeInput.toUpperCase() });
       const embed = new EmbedBuilder().setColor(0x5865F2).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'delete') {
       const code = interaction.options.getString('code').toUpperCase();
@@ -189,12 +189,12 @@ module.exports = {
       if (deleted.count === 0) {
         const msg = await tGuild(interaction.guild.id, 'code.not_found');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
 
       const msg = await tGuild(interaction.guild.id, 'code.deleted', { code });
       const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
   },
 };

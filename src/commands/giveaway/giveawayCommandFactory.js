@@ -1,5 +1,5 @@
 // src/commands/giveaway/giveawayCommandFactory.js
-const { SlashCommandBuilder, ChannelType, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, PermissionFlagsBits, EmbedBuilder, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 const {
@@ -98,7 +98,7 @@ function buildGiveawayCommand({ name, description }) {
     data: builder,
     category: 'ギブアウェイ / Giveaway',
     async execute(interaction) {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
       const group = interaction.options.getSubcommandGroup();
       const sub = interaction.options.getSubcommand();

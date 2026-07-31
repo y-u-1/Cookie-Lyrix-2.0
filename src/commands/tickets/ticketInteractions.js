@@ -1,5 +1,5 @@
 // src/commands/tickets/ticketInteractions.js
-const { ChannelType, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+const { ChannelType, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -12,7 +12,7 @@ async function handleCreate(interaction) {
   const userId = interaction.user.id;
   const lockKey = `${guildId}:${userId}`;
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   if (creatingLock.has(lockKey)) {
     const msg = await tGuild(guildId, 'ticket.already_open');
@@ -105,7 +105,7 @@ async function handleCreate(interaction) {
     if (interaction.deferred) {
       await interaction.editReply({ content: errorMsg }).catch(() => {});
     } else {
-      await interaction.reply({ content: errorMsg, ephemeral: true }).catch(() => {});
+      await interaction.reply({ content: errorMsg, flags: MessageFlags.Ephemeral }).catch(() => {});
     }
   } finally {
     creatingLock.delete(lockKey);

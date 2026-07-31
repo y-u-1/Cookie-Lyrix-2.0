@@ -17,6 +17,7 @@ const logger = require('../../lib/logger');
 
 const WS_URL = 'wss://api.p2pquake.net/v2/ws';
 const RECONNECT_DELAY_MS = 10 * 1000;
+const MAX_RECONNECT_DELAY_MS = 5 * 60 * 1000; // 429などが連続した場合の上限(5分)
 const HEARTBEAT_INTERVAL_MS = 30 * 1000; // 30秒ごとにpingを送る
 const HEARTBEAT_TIMEOUT_MS = 45 * 1000;  // 45秒以内にpongが無ければ切断とみなす
 const EVENT_CACHE_TTL_MS = 60 * 60 * 1000; // 続報を紐付けるための保持時間(1時間)
@@ -155,6 +156,15 @@ function startEarthquakeWatcher(client) {
   let reconnectTimer = null;
   let heartbeatTimer = null;
   let heartbeatTimeoutTimer = null;
+  let reconnectAttempts = 0;
+
+  // 指数バックオフ(10s, 20s, 40s, ... 最大5分)。
+  // 429(レート制限)のような接続失敗が連続した際に、間隔を空けずに再接続を
+  // 繰り返してサーバーへ負荷をかけ続けてしまわないようにする。
+  function getReconnectDelay() {
+    const delay = RECONNECT_DELAY_MS * Math.pow(2, reconnectAttempts);
+    return Math.min(delay, MAX_RECONNECT_DELAY_MS);
+  }
 
   function clearHeartbeatTimers() {
     if (heartbeatTimer) clearInterval(heartbeatTimer);
@@ -185,6 +195,7 @@ function startEarthquakeWatcher(client) {
 
     ws.on('open', () => {
       logger.success('地震速報の受信を開始しました(WebSocket)');
+      reconnectAttempts = 0; // 接続に成功したのでバックオフをリセットする
       startHeartbeat();
     });
 
@@ -207,10 +218,12 @@ function startEarthquakeWatcher(client) {
       // p2pquakeのWebSocketエンドポイントは仕様上10分で強制切断されるため、
       // これは異常ではなく想定内の切断。自動的に再接続する。
       if (reconnectTimer) return;
+      const delay = getReconnectDelay();
+      reconnectAttempts += 1;
       reconnectTimer = setTimeout(() => {
         reconnectTimer = null;
         connect();
-      }, RECONNECT_DELAY_MS);
+      }, delay);
     });
 
     ws.on('error', (err) => {

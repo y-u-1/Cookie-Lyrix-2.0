@@ -1,5 +1,5 @@
 // src/commands/economy/redeem.js
-const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { addCoins, addXp } = require('../../lib/levelService');
 const { applyLevelRoles } = require('../../lib/levelRoleService');
@@ -45,7 +45,7 @@ async function handleSubmit(interaction) {
 }
 
 async function processRedeem(interaction, codeInput) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const code = await prisma.redeemCode.findUnique({
@@ -203,7 +203,7 @@ async function processRedeem(interaction, codeInput) {
       if (interaction.deferred) {
         await interaction.editReply({ content: errorMsg });
       } else {
-        await interaction.reply({ content: errorMsg, ephemeral: true });
+        await interaction.reply({ content: errorMsg, flags: MessageFlags.Ephemeral });
       }
     } catch (e) {}
   }

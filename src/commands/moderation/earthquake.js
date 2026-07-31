@@ -1,5 +1,5 @@
 // src/commands/moderation/earthquake.js
-const { SlashCommandBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild, getGuildLanguage } = require('../../lib/i18n');
 const { getScaleText } = require('../../lib/earthquakeService');
@@ -55,7 +55,7 @@ module.exports = {
       const setupLang = await getGuildLanguage(interaction.guild.id);
       const msg = await tGuild(interaction.guild.id, 'earthquake.setup_success', { channel: channel.toString(), min_scale: getScaleText(minScale, setupLang) });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'disable') {
       await prisma.guildSettings.upsert({
@@ -66,11 +66,11 @@ module.exports = {
 
       const msg = await tGuild(interaction.guild.id, 'earthquake.disabled');
       const embed = new EmbedBuilder().setColor(0x5865F2).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'test') {
       // 実際のAPIを待たずに見た目を確認できるよう、サンプルデータでマップを生成する。
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
       const sample = {
         id: 'test-sample',

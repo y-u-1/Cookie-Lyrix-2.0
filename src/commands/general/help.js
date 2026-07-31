@@ -1,5 +1,5 @@
 // src/commands/general/help.js
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { tGuild } = require('../../lib/i18n');
 
 module.exports = {
@@ -36,6 +36,6 @@ module.exports = {
 
     embed.setFooter({ text: 'Cookie Lyrix 2.0' });
     
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
   },
 };

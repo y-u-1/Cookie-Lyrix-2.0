@@ -1,5 +1,5 @@
 // src/commands/moderation/auto-role.js
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -30,7 +30,7 @@ module.exports = {
       if (role.position >= interaction.guild.members.me.roles.highest.position) {
         const msg = await tGuild(interaction.guild.id, 'autorole.error');
         const embed = new EmbedBuilder().setColor(0xED4245).setDescription(msg);
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
       }
 
       await prisma.guildSettings.upsert({
@@ -41,7 +41,7 @@ module.exports = {
 
       const msg = await tGuild(interaction.guild.id, 'autorole.setup_success', { role: role.toString() });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (sub === 'disable') {
       await prisma.guildSettings.upsert({
@@ -52,7 +52,7 @@ module.exports = {
 
       const msg = await tGuild(interaction.guild.id, 'autorole.disabled');
       const embed = new EmbedBuilder().setColor(0x5865F2).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
   },
 };

@@ -1,11 +1,11 @@
 // src/commands/general/pollInteractions.js
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
 async function handleVote(interaction) {
   // 先にACKする(複数回のDB問い合わせが続くため)。
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const optionId = interaction.customId.replace('poll_vote_', '');
   

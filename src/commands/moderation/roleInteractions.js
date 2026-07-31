@@ -2,7 +2,7 @@
 // 2026-07-29 仕様変更: パネル1つにつきロールは1つだけ。
 // 「ロールを追加」ボタン・カスタムラベル入力モーダルは廃止し、
 // パネル作成後に変更したい場合は新しいパネルを作り直す運用とする。
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -10,7 +10,7 @@ const { tGuild } = require('../../lib/i18n');
 async function handleRoleToggle(interaction) {
   // 先にACKする。ロールの付与/削除はDiscord APIへの実際の通信が発生し、
   // 混雑時などに3秒を超えることがあるため、確認前に必ず応答しておく。
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const itemId = interaction.customId.replace('role_toggle_', '');
   const item = await prisma.rolePanelItem.findUnique({ where: { id: itemId } });

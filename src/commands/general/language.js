@@ -1,5 +1,5 @@
 // src/commands/general/language.js
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { t, setGuildLanguageCache } = require('../../lib/i18n');
 const logger = require('../../lib/logger');
@@ -54,7 +54,7 @@ module.exports = {
         .setDescription(t(lang, 'lang_err'))
         .setFooter({ text: 'Cookie Lyrics 2.0' });
       
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
   },
 };

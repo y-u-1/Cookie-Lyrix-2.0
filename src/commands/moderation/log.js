@@ -1,5 +1,5 @@
 // src/commands/moderation/log.js
-const { SlashCommandBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const { prisma } = require('../../lib/database');
 const { tGuild } = require('../../lib/i18n');
 
@@ -50,7 +50,7 @@ module.exports = {
       const typeText = await tGuild(interaction.guild.id, `log.type_${sub}`);
       const msg = await tGuild(interaction.guild.id, 'log.setup_success', { type: typeText, channel: channel.toString() });
       const embed = new EmbedBuilder().setColor(0x57F287).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
     } else if (group === 'disable') {
       await prisma.logChannel.deleteMany({
@@ -60,7 +60,7 @@ module.exports = {
       const typeText = await tGuild(interaction.guild.id, `log.type_${sub}`);
       const msg = await tGuild(interaction.guild.id, 'log.setup_disabled', { type: typeText });
       const embed = new EmbedBuilder().setColor(0x5865F2).setDescription(msg);
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
   },
 };
