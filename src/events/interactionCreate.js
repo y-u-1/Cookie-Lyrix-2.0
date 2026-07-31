@@ -66,7 +66,10 @@ module.exports = {
       return;
     }
 
-    if (!interaction.isChatInputCommand()) return;
+    // isChatInputCommand()のみだと、メッセージ/ユーザーのコンテキストメニューコマンド
+    // (右クリック→アプリ、から実行するタイプ)が一切実行されずに無視されてしまうため、
+    // isContextMenuCommand()も併せて許可する。
+    if (!interaction.isChatInputCommand() && !interaction.isContextMenuCommand()) return;
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
 

@@ -88,8 +88,9 @@ module.exports = {
       const desc = await tGuild(interaction.guild.id, 'affinity.panel_desc');
       const topUsersName = await tGuild(interaction.guild.id, 'affinity.top_pairs');
       const noData = await tGuild(interaction.guild.id, 'affinity.no_data');
-      
-      const affinities = await getTopAffinity(interaction.guild.id, 10);
+
+      const PAGE_SIZE = 10; // affinityInteractions.jsのページングと合わせる(1行が2人分で長いため)
+      const affinities = await getTopAffinity(interaction.guild.id, PAGE_SIZE);
       const lang = await getGuildLanguage(interaction.guild.id);
       const lines = affinities.map((a, i) => t(lang, 'affinity.pair_line', { rank: i + 1, user1: a.userId, user2: a.targetId, points: a.points }));
 
@@ -103,8 +104,21 @@ module.exports = {
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('affinity_page_1').setLabel('‹').setStyle(ButtonStyle.Secondary).setDisabled(true),
-        new ButtonBuilder().setCustomId('affinity_page_2').setLabel('›').setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId('affinity_page_2').setLabel('›').setStyle(ButtonStyle.Secondary).setDisabled(affinities.length < PAGE_SIZE)
       );
+
+      // 既存パネルが別チャンネルにある場合、更新されないまま残り続ける「幽霊パネル」を防ぐため
+      // 可能であれば削除してから新しいパネルを作成する。
+      const existingPanel = await prisma.leaderboardPanel.findUnique({
+        where: { guildId_type: { guildId: interaction.guild.id, type: 'AFFINITY' } },
+      });
+      if (existingPanel) {
+        const oldChannel = await interaction.guild.channels.fetch(existingPanel.channelId).catch(() => null);
+        if (oldChannel) {
+          const oldMessage = await oldChannel.messages.fetch(existingPanel.messageId).catch(() => null);
+          if (oldMessage) await oldMessage.delete().catch(() => {});
+        }
+      }
 
       const panelMessage = await interaction.channel.send({ embeds: [embed], components: [row] });
 

@@ -66,8 +66,9 @@ module.exports = {
       const desc = await tGuild(interaction.guild.id, 'level.panel_desc');
       const topUsersName = await tGuild(interaction.guild.id, 'level.top_users');
       const noData = await tGuild(interaction.guild.id, 'level.no_data');
-      
-      const topUsers = await getTopUsers(interaction.guild.id, 20);
+
+      const PAGE_SIZE = 20;
+      const topUsers = await getTopUsers(interaction.guild.id, PAGE_SIZE);
       const lines = topUsers.map((u, i) => `**${i + 1}.** <@${u.userId}> - **LV. ${u.level}** (${Number(u.xp)} XP)`);
 
       const embed = new EmbedBuilder()
@@ -78,10 +79,28 @@ module.exports = {
         .setFooter({ text: await tGuild(interaction.guild.id, 'level.last_updated') })
         .setTimestamp();
 
+      // データがPAGE_SIZE未満(=次のページが存在しない)場合は「›」ボタンを無効化する。
+      // 以前はここが常に有効のままで、20人未満のサーバーで「次へ」を押すと
+      // 空っぽのページが表示されてしまうバグがあった(ページ送り後の判定は
+      // levelInteractions.jsで正しく行われていたため、初期表示だけが不整合だった)。
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('level_page_1').setLabel('‹').setStyle(ButtonStyle.Secondary).setDisabled(true),
-        new ButtonBuilder().setCustomId('level_page_2').setLabel('›').setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId('level_page_2').setLabel('›').setStyle(ButtonStyle.Secondary).setDisabled(topUsers.length < PAGE_SIZE)
       );
+
+      // 既に別のチャンネルにパネルが存在する場合、DB上は新しい方に上書きされるだけで
+      // 古いメッセージは残り続け、二度と更新されない「幽霊パネル」になってしまっていた。
+      // 可能であれば古いメッセージを削除してから、新しいパネルを作成する。
+      const existingPanel = await prisma.leaderboardPanel.findUnique({
+        where: { guildId_type: { guildId: interaction.guild.id, type: 'XP' } },
+      });
+      if (existingPanel) {
+        const oldChannel = await interaction.guild.channels.fetch(existingPanel.channelId).catch(() => null);
+        if (oldChannel) {
+          const oldMessage = await oldChannel.messages.fetch(existingPanel.messageId).catch(() => null);
+          if (oldMessage) await oldMessage.delete().catch(() => {});
+        }
+      }
 
       const panelMessage = await interaction.channel.send({ embeds: [embed], components: [row] });
 
